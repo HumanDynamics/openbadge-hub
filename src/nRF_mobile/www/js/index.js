@@ -32,6 +32,14 @@ RECORDING_TIMEOUT_MINUTES = 5;
 window.SHOW_BADGE_CONSOLE = false;
 
 
+//
+// set to false in the real app, or keep true if we're okay with
+//   SLOANers possibly guessing to type "EXPLORE" into the groupID field
+//   and getting access to our debug mode
+//
+DEBUG_MODE_ENABLED = true
+
+
 /***********************************************************************
  * Model Declarations
  */
@@ -805,7 +813,7 @@ app = {
         //   SLOANers possibly guessing to type "EXPLORE" into the groupID field
         //   and getting access to our debug mode
         //
-        app.exploreEnabled = true;
+        app.exploreEnabled = DEBUG_MODE_ENABLED;
         app.exploreMode = app.exploreEnabled;
         
         // if we are in explore mode, we will generate an empty group to begin
