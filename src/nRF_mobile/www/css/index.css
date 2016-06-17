@@ -312,6 +312,8 @@ footer {
 }
 
 
+
+
 .clock-title {
     font-size: 20px;
     margin-bottom: 20px;
@@ -330,4 +332,8 @@ footer {
     width:300px;
     height:300px;
     margin:0 auto;
+}
+
+.force-upper {
+    text-transform: uppercase;
 }

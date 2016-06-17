@@ -9,6 +9,7 @@
   "author": "",
   "license": "BSD-2-Clause",
   "dependencies": {
-    "q": "~1.4.1"
+    "q": "~1.4.1",
+    "moment": "~2.13.0"
   }
 }
