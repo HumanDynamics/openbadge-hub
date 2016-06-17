@@ -1,5 +1,4 @@
 require('q');
-//var moment = require('moment');
 var qbluetoothle = require('./qbluetoothle');
 var Badge = require('./badge');
 struct = require('./struct.js').struct;
@@ -80,7 +79,6 @@ function GroupMember(memberJson) {
     this.badge.onConnect = function() {
         if (this.$lastConnect) {
             this.$lastConnect.text(this.badge.lastConnect.toUTCString());
-            //this.$lastConnect.text(moment(this.badge.lastConnect).to(moment()));
         }
     }.bind(this);
 
@@ -221,6 +219,10 @@ PAGES = [];
  */
 mainPage = new Page("main",
     function onInit() {
+        //
+        // Setting the group id in the settings page to "explore" will cause the app to 
+        //  go into the explore mode, where it just finds badges around it
+        //
         var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
         app.exploreMode = app.exploreEnabled && (groupId === "EXPLORE");
         
@@ -242,6 +244,9 @@ mainPage = new Page("main",
                     memberList.push(member)
                 }
             }
+            //
+            // in explore mode, it doesnt matter if we only have one person, but do still need 1
+            //
             if (app.exploreMode) {
                 if (activeMembers < 1) {
                     navigator.notification.alert("Choose a badge to inspect.");
@@ -264,11 +269,14 @@ mainPage = new Page("main",
         });
     },
     function onShow() {
+        // 
+        // each time the main page showes, we update weather or not we are on exploremode
+        //
         var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
         app.exploreMode = app.exploreEnabled && (groupId === "EXPLORE");
         if (app.exploreMode) {
-            $(".explore").removeClass("hidden");
-            $(".standard").addClass("hidden");
+            $(".explore").removeClass("hidden");  // show all the explore elements
+            $(".standard").addClass("hidden");    // remove all the standard elements
             $(".explore-chart-container").css("margin-top", "-100px")
         } else {
             $(".standard").removeClass("hidden");
@@ -303,6 +311,10 @@ mainPage = new Page("main",
             app.scanForBadges();
         },
         loadGroupData: function() {
+            //
+            // there will be no local JSON for the explore group, becuase
+            //   it changes with each exploration, so lets just skip this step
+            //
             if (app.exploreMode) {
                 app.refreshGroupData(false);
                 return;
@@ -346,6 +358,8 @@ mainPage = new Page("main",
             
             for (var i = 0; i < app.group.members.length; i++) {
                 var member = app.group.members[i];
+                // we dont bother with this in explore mode, becuase we dont have
+                //   group memebers to add. rather, we add them as we find anything around us
                 if (!app.exploreMode) {
                     $("#devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-full battery-icon' /><i class='icon ion-happy present-icon' /></li>".format(member)));
                 }
@@ -365,7 +379,7 @@ mainPage = new Page("main",
                 if (member.active) {
                     $el.addClass("active");
                 }
-                
+                // we ad a voltage indicator regardless of the activity state
                 if (member.voltage) {
                     if (member.voltage >= BATTERY_YELLOW_THRESHOLD) {
                         $el.find(".battery-icon").addClass("green");
@@ -388,7 +402,12 @@ mainPage = new Page("main",
 settingsPage = new Page("settings",
     function onInit() {
         $("#saveButton").click(function() {
-            localStorage.setItem(LOCALSTORAGE_GROUP_KEY, $("#groupIdField").val().toUpperCase());
+            //
+            //  we want the UPPER Case persion of group ID, because its case insensitive anyways, and 
+            //    the id's are stored on the server as uppercase. convert here for uniformity
+            //
+            var groupKey = $("#groupIdField").val().toUpperCase()
+            localStorage.setItem(LOCALSTORAGE_GROUP_KEY, groupKey); 
             app.showPage(mainPage);
             toastr.success("Settings Saved!");
         });
@@ -453,7 +472,9 @@ meetingPage = new Page("meeting",
 
     },
     function onShow() {
-        
+        // 
+        // each time the main page showes, we update weather or not we are on exploremode
+        //
         if (app.exploreMode) {
             $(".explore").removeClass("hidden");
             $(".standard").addClass("hidden");
@@ -779,6 +800,11 @@ app = {
      * Initializations
      */
     initialize: function() {
+        //
+        // set exploreEnabled to false in the real app, or keep true if we're okay with
+        //   SLOANers possibly guessing to type "EXPLORE" into the groupID field
+        //   and getting access to our debug mode
+        //
         app.exploreEnabled = true;
         app.exploreMode = app.exploreEnabled;
         
@@ -1021,10 +1047,7 @@ app = {
         }
 
         // we exit early here to ensure we dont rewrite our fake group
-        if (app.exploreMode) {
-//            app.group.name ="Explored Group", 
-//            app.group.key ="Explore", 
-//            app.group.visualization_ranges = {start:0, end:Number.MAX_VALUE},            
+        if (app.exploreMode) {          
             app.onrefreshGroupDataComplete();
             return;
         }
@@ -1158,6 +1181,11 @@ app = {
         
     },
     clearScannedBadges: function() {
+        //
+        // in exploreMode, rather than clearing weather or not we have seen
+        //  a particular badge, we forget all the badges and allow us to 
+        //  see what badges are near us again
+        //
         if (app.exploreMode) {
             app.group = new Group({name:"Explored Group", 
                                     key:"Explore", 
