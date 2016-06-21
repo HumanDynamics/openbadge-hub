@@ -610,7 +610,7 @@ meetingPage = new Page("meeting",
 
             clearInterval(this.chartTimeout);
             this.chartTimeout = setInterval(function() {
-                meetingPage.updateCharts();
+                meetingPage.updateCharts();               // known to cause noisy memory useage, poissibly leaky
             }, CHART_UPDATE_INTERVAL);
 
             var $mmVis = $("#meeting-mediator");

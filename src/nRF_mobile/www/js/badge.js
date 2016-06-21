@@ -30,7 +30,7 @@ function Badge(address) {
 			function(obj) { // failure
                 badge.log("Error sending data: " + obj.error + "|" + obj.message + "|" + " Keys: " + Object.keys(obj));
 			}
-		).fin(function() {
+		).finally(function() {
             badge.refreshTimeout();
             badge.sendingData = false;
         });
@@ -51,7 +51,7 @@ function Badge(address) {
             function(obj) { // failure
                 badge.log("Error sending data: " + obj.error + "|" + obj.message + "|" + " Keys: " + Object.keys(obj));
             }
-        ).fin(function() {
+        ).finally(function() {
             badge.sendingData = false;
             badge.log("Sent string that needs to immediately close");
             badge.close();
@@ -302,7 +302,7 @@ function Badge(address) {
 					}
 				}
 			)
-			.fin(function() {
+			.finally(function() {
             });
 
 
@@ -427,7 +427,7 @@ function Badge(address) {
 				badge.log("Close error: " + obj.error + " - " + obj.message + "|Keys: " + Object.keys(obj));
                 badge.logObject(obj);
 			}
-		).fin(function() {
+		).finally(function() {
             badge.lastDisconnect = new Date();
             badge.isConnected = false;
             badge.isDisconnecting = false;

@@ -57,10 +57,11 @@ function Chunk() {
      * @param newData the byte array that represents more samples
      */
     this.addSamples = function(newData) {
-        this.samples = this.samples.concat(newData);
+        Array.prototype.push.apply(this.samples, newData);
+        //this.samples = this.samples.concat(newData);
         if (this.samples.length > this.numSamples) {
             // error
-            console.error("Too many samples in chunk!",sampleLength);
+            console.error("Too many samples in chunk!",this.samples.length);
         }
 
     }.bind(this);
