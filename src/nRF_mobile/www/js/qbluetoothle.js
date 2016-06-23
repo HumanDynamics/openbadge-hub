@@ -27,7 +27,7 @@ function connectDevice(params) {
         "address": address
     };
     bluetoothle.connect(
-        function(obj) { // success
+        function connected(obj) { // success
             //console.log(address + "|Internal call to connect - success");
             if (obj.status == "connected") {
                 d.resolve(obj);
@@ -36,7 +36,7 @@ function connectDevice(params) {
                 d.reject(obj); //sould this work? it might be a delayed error
             }
         },
-        function(obj) { // failure function
+        function conenct_err(obj) { // failure function
             d.reject(obj);
         },
         paramsObj);
@@ -51,10 +51,10 @@ function closeDevice(params) {
         "address": address
     };
     bluetoothle.close(
-        function(obj) { // success
+        function closed(obj) { // success
             d.resolve(obj);
         },
-        function(obj) { // failure function
+        function close_err(obj) { // failure function
             d.reject(obj);
         },
         paramsObj);
@@ -69,10 +69,10 @@ function disconnectDevice(params) {
         "address": address
     };
     bluetoothle.disconnect(
-        function(obj) { // success
+        function disconnected(obj) { // success
             d.resolve(obj);
         },
-        function(obj) { // failure function
+        function disconnected_err(obj) { // failure function
             d.reject(obj);
         },
         paramsObj);
@@ -86,7 +86,7 @@ function discoverDevice(params) {
     var d = Q.defer();
     var paramsObj = {"address":address};
     bluetoothle.discover(
-        function(obj) { // success
+        function discovered(obj) { // success
             //console.log(address + "|Internal call to discover - success");
             if (obj.status == "discovered") {
                 d.resolve(obj);
@@ -94,7 +94,7 @@ function discoverDevice(params) {
                 d.reject(obj);
             }
         },
-        function(obj) { // failure function
+        function disconver_err(obj) { // failure function
             //console.log(address + "|Internal call to discover - failure: " + obj.error + " - " + obj.message + " Keys: " + Object.keys(obj));
             d.reject(obj);
         },
@@ -115,12 +115,12 @@ function subscribeToDevice(params) {
     };
 
     bluetoothle.subscribe(
-        function(obj) { // success
+        function subscribed(obj) { // success
             //console.log(address + "|Internal call to subscribe - success");
             d.notify(obj); // notify and not resolve, so code can get notifications
             //d.resolve(obj);
         },
-        function(obj) { // failure function
+        function subscribe_err(obj) { // failure function
             //console.log(address + "|Internal call to subscribe - error: " + obj.error + " - " + obj.message + " Keys: " + Object.keys(obj));
             d.reject(obj);
         },
@@ -141,10 +141,10 @@ function writeToDevice(address,strValue) {
     };
 
     bluetoothle.write(
-        function(obj) { // success
+        function wrote(obj) { // success
             d.resolve(obj);
         },
-        function(obj) { // failure function
+        function write_err(obj) { // failure function
             d.reject(obj);
         },
         paramsObj);
@@ -169,7 +169,7 @@ function startScan() {
         scanTimer = setTimeout(function() {
             console.log('Stopping scan');
             bluetoothle.stopScan(
-                function(obj) {
+                function stopped(obj) {
                     deferred.resolve(obj);
                 },
                 function(obj) {
