@@ -1099,13 +1099,13 @@ app = {
         app.scanning = true;
         qbluetoothle.stopScan().then(function() {
             qbluetoothle.startScan().then(
-                function(obj){ // success
+                function scanSucess(obj){ // success
                     console.log("Scan completed successfully - "+obj.status)
                     app.onScanComplete();
-                }, function(obj) { // error
+                }, function scanError(obj) { // error
                     console.log("Scan Start error: " + obj.error + " - " + obj.message)
                     app.onScanComplete();
-                }, function(obj) { // progress
+                }, function scanProgress(obj) { // progress
 
                     // extract badge data from advertisement
                     var voltage = null;
@@ -1122,7 +1122,7 @@ app = {
                 });
         });
     },
-    onScanComplete: function() {
+    onScanComplete: function scanCompleted() {
         app.scanning = false;
         $("#scanning").addClass("hidden");
         if (! app.group) {
@@ -1131,7 +1131,7 @@ app = {
         app.markActiveUsers();
         mainPage.displayActiveBadges();
     },
-    onScanUpdate: function(activeBadge,voltage) {
+    onScanUpdate: function scanUpdated(activeBadge,voltage) {
         if (! app.group) {
             return;
         }
@@ -1160,7 +1160,7 @@ app = {
             $("#devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-full battery-icon' /><i class='icon ion-happy present-icon' /></li>".format(newMember)));
         }
     },
-    stopScan: function() {
+    stopScan: function scanStopped() {
         app.scanning = false;
         $("#scanning").addClass("hidden");
         qbluetoothle.stopScan();
