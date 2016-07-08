@@ -496,6 +496,7 @@ meetingConfigPage = new Page("meetingConfig",
  */
 meetingPage = new Page("meeting",
     function onInit() {
+        app.meetingPaused = false
         $("#endMeetingButton").click(function() {
             this.confirmBeforeHide();
         }.bind(this));
@@ -504,6 +505,31 @@ meetingPage = new Page("meeting",
         $('#add-rem-member-button').featherlight($("#devicelist-add-rem"));
         $('#add-rem-member-button').click(function() {
           app.scanForBadges()  
+        })
+        $('#play-pause-button').click(function() {
+          app.meetingPaused = !app.meetingPaused
+          if (app.meetingPaused) {
+            $("#visualization").addClass("hidden")
+
+            $('#play-pause-button').removeClass("ion-ios-pause")
+            $('#play-pause-button').addClass("ion-ios-play")
+
+            app.stopAllDeviceRecording()
+            app.meetingPauseTimeout = setTimeout(function() {
+              $("#visualization").removeClass("hidden")
+              $('#play-pause-button').removeClass("ion-ios-play")
+            $('#play-pause-button').addClass("ion-ios-pause")
+              app.startAllDeviceRecording()
+              app.meetingPaused = !app.meetingPaused
+            }, 1000*60 * 10)
+          } else {
+            $('#play-pause-button').removeClass("ion-ios-play")
+            $('#play-pause-button').addClass("ion-ios-pause")
+            $("#visualization").removeClass("hidden")
+
+            clearTimeout(app.meetingPauseTimeout)
+            app.startAllDeviceRecording()
+          }
         })
 
     },
@@ -1364,7 +1390,7 @@ app = {
     },
     watchdog: function() {
 
-        if (! app.meeting) {
+        if (! app.meeting || app.meetingPaused) {
             return;
         }
 
