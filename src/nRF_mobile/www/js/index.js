@@ -129,9 +129,9 @@ function Meeting(group, members, type, moderator, description, location) {
     }();
 
     var meeting = this;
-
+  
+  
     $.each(this.members, function(index, member) {
-
         member.clearData();
 
     }.bind(this));
@@ -143,6 +143,50 @@ function Meeting(group, members, type, moderator, description, location) {
         this.writeLog(JSON.stringify(chunkData));
 
     }.bind(this);
+  
+  
+    this.logPause = function(paused) {
+      var time = new Date().getTime();
+      
+      var data;
+      
+      if (paused) {
+        data = {
+          event:"break",
+          details:"break_started",
+          start:time
+        }
+      } else {
+        data = {
+          event:"break",
+          details:"break_ended",
+          end:time
+        }
+      }
+      
+      this.writeLog(JSON.stringify(data))
+      
+      this.printLogFile()
+      
+    }.bind(this);
+  
+  
+    this.logMeetingMemberChange = function(member, details) {
+      
+      var data = {
+        event:"member_update",
+        details:details,
+        changed:{badgeId:member.badgeId,
+                 key:member.key,
+                 name:member.name}
+      }
+      
+      this.writeLog(JSON.stringify(data))
+      
+      this.printLogFile()
+       
+    }.bind(this);
+
 
     this.getLogName = function() {
         return this.uuid + ".txt";
@@ -507,28 +551,39 @@ meetingPage = new Page("meeting",
           app.scanForBadges()  
         })
         $('#play-pause-button').click(function() {
+          
           app.meetingPaused = !app.meetingPaused
           if (app.meetingPaused) {
+            app.meeting.logPause(true);
             $("#visualization").addClass("hidden")
-
+            $("#pause_info").removeClass("hidden")
+            $("#count-down").count_down()
+            
+            
             $('#play-pause-button').removeClass("ion-ios-pause")
             $('#play-pause-button').addClass("ion-ios-play")
 
-            app.stopAllDeviceRecording()
+            //app.stopAllDeviceRecording()
             app.meetingPauseTimeout = setTimeout(function() {
+              $("#pause_info").addClass("hidden")
+              app.meeting.logPause(false);
               $("#visualization").removeClass("hidden")
               $('#play-pause-button').removeClass("ion-ios-play")
-            $('#play-pause-button').addClass("ion-ios-pause")
-              app.startAllDeviceRecording()
+              $('#play-pause-button').addClass("ion-ios-pause")
+              //app.startAllDeviceRecording()
               app.meetingPaused = !app.meetingPaused
             }, 1000*60 * 10)
+            
+            
           } else {
+            app.meeting.logPause(false);
+            $("#pause_info").addClass("hidden")
             $('#play-pause-button').removeClass("ion-ios-play")
             $('#play-pause-button').addClass("ion-ios-pause")
             $("#visualization").removeClass("hidden")
 
             clearTimeout(app.meetingPauseTimeout)
-            app.startAllDeviceRecording()
+            //app.startAllDeviceRecording()
           }
         })
 
@@ -583,6 +638,11 @@ meetingPage = new Page("meeting",
 
         this.initCharts();
         this.setMeetingTimeout();
+  
+  
+        for (var i = 0; i < app.meeting.members.length; i++) {
+          app.meeting.logMeetingMemberChange(app.meeting.members[i], "member_added")
+        }
     },
     function onHide() {
         clearInterval(this.syncTimeout);
@@ -1275,10 +1335,11 @@ app = {
                   if (member.active) {
                     app.meeting.members.push(member)
                     member.badge.startRecording()
-                    
+                    app.meeting.logMeetingMemberChange(member, "member_added")
                   } else {
                     for (var j = 0; j < app.meeting.members.length; j++) {
-                      if (app.meeting.members[j].key == key) {
+                      if (app.meeting.members[j].key === key) {
+                        app.meeting.logMeetingMemberChange(member, "member_removed")
                         app.meeting.members.splice(j, 1)
                         break;
                       }
@@ -1390,7 +1451,7 @@ app = {
     },
     watchdog: function() {
 
-        if (! app.meeting || app.meetingPaused) {
+        if (! app.meeting) {
             return;
         }
 
@@ -1569,7 +1630,34 @@ jQuery.fn.extend({
             setText();
         });
         return this;
-    }
+    },
+  count_down: function () {
+        var end = new Date().getTime() + 1000*60*10;
+        $.each(this, function() {
+            var $this = $(this);
+            var clock = this;
+            function setText() {
+                var now = new Date().getTime();
+                var timediff = Math.floor((end-start) / 1000);
+                var hours = Math.floor(timediff / 3600);
+                var minutes = pad(Math.floor(timediff % 3600 / 60), 2);
+                var seconds = pad(Math.floor(timediff % 60), 2);
+                $this.text("{0}:{1}:{2}".format(hours, minutes, seconds));
+            };
+            if (clock.interval) {
+                clearInterval(clock.interval);
+            }
+            clock.interval = setInterval(function() {
+                if (this == null) {
+                    clearInterval(clock.interval);
+                    return;
+                }
+                setText();
+            }.bind(this), 1000);
+            setText();
+        });
+        return this;
+  
 });
 
 

@@ -64,7 +64,9 @@ footer {
     display:none;
 }
 
-
+#play-pause-button {
+  margin-left: 10px;
+}
 
 .page, .dialog {
     display:none;
