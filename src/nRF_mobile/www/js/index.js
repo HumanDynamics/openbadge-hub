@@ -177,8 +177,7 @@ function Meeting(group, members, type, moderator, description, location) {
         event:"member_update",
         details:details,
         changed:{badgeId:member.badgeId,
-                 key:member.key,
-                 name:member.name}
+                 key:member.key}
       }
       
       this.writeLog(JSON.stringify(data))
