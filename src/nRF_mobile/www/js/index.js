@@ -174,9 +174,8 @@ function Meeting(group, members, type, moderator, description, location) {
     this.logMeetingMemberChange = function(member, details) {
       
       var data = {
-        event:"member_update",
-        details:details,
-        changed:{badgeId:member.badgeId,
+        event:details,
+        changed:{badge:member.badgeId,
                  key:member.key}
       }
       
