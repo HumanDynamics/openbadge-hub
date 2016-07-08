@@ -27,7 +27,7 @@
         <div id="main" class="page active">
             <div class="bar bar-header bar-light">
                 <h1 class="title">RoundTable</h1>
-                <a id="settings-button" class="button button-icon icon button-clear ion-android-settings"></a>
+                <a id="settings-button" class="button button-icon icon button-clear standard explore ion-android-settings"></a>
             </div>
             <div>
                 <div id="devicelistLoader" class="loader-area devicelistMode">
@@ -38,12 +38,12 @@
                         <span class="standard">
                             Group Members
                         </span>
-                        <span class="explore hidden">
+                        <span class="explore free hidden">
                             Found Badges
                         </span>
 
                         <a class="clear-scan button button-light button-small standard clear-scan-button">Clear</a>
-                        <a class="clear-scan button button-light button-small explore hidden clear-scan-button">Refresh</a>
+                        <a class="clear-scan button button-light button-small explore free hidden clear-scan-button">Refresh</a>
 
                         <div id="scanning" class="scanning icon ion-refresh hidden"></div>
                     </div>
@@ -62,7 +62,7 @@
             </div>
             <footer>
                 <div class="button-bar cta-button">
-                    <button class="button button-positive standard startMeetingButton">Create New Meeting</button>
+                    <button class="button button-positive standard free startMeetingButton">Create New Meeting</button>
                     <button class="button button-positive explore hidden startMeetingButton">Inspect Badges</button>
                 </div>
                 
@@ -87,11 +87,11 @@
         <div id="meetingConfig" class="page">
             <div class="bar bar-header bar-calm">
                 <a class="button button-icon icon ion-arrow-left-b back-button"></a>
-                <h1 class="title standard">Configure New Meeting</h1>
+                <h1 class="title standard free">Configure New Meeting</h1>
                 <h1 class="title explore hidden">Configure</h1>
             </div>
             <div>
-                <div class="list standard">
+                <div class="list standard free">
                     <div class="item item-divider">
                         Meeting with <span id="memberNameList"></span>
                     </div>
@@ -127,7 +127,7 @@
                 </div>
             </div>
             <footer>
-                <div class="button-bar cta-button standard">
+                <div class="button-bar cta-button standard free">
                     <button class="button button-calm startMeetingConfirmButton">Begin Meeting</button>
                 </div>
                 <div class="button-bar cta-button explore hidden">
@@ -137,31 +137,38 @@
         </div>
 
         <div id="meeting" class="page">
-            <div class="bar bar-header bar-balanced standard">
+            <div class="bar bar-header bar-balanced standard free">
+                <a id="add-rem-member-button" class="button button-icon icon button-clear ion-person-add"></a>
                 <h1 class="title">Meeting</h1>
                 <a id="debug-chart-button" class="button button-icon icon button-clear ion-hammer"></a>
             </div>
             <div>
-                <div class="clock-wrapper standard">
+                <div class="clock-wrapper standard free">
                     <div class="clock-title">Meeting Duration</div>
                     <div class="clock" id="clock"></div>
                 </div>
-                <div id="visualization" class="visualization-wrapper standard">
+                <div id="visualization" class="visualization-wrapper standard free">
                     <div id="meeting-mediator" class="meeting-mediator"></div>
                 </div>
-                <div id="meetingmemberlist" class="meeting-member-list list list-inset standard">
+                <div id="meetingmemberlist" class="meeting-member-list list list-inset standard free">
                     <div class="item item-divider standard">
                             Meeting Members
                     </div>
-                    <ul id="meetingmemberlist-content" class="standard"></ul>
+                    <ul id="meetingmemberlist-content" class="standard free"></ul>
                 </div>
-<!--
-                <div class="standard">
+                <div style="height:500px">
+                </div>
+              
+              
+                <ul id="devicelist-add-rem" class="devicelist"></ul>
+              
+              
+                <div class="standard free">
                     <div id="debug-charts" class="debug-charts"></div>
                 </div>
--->
+              
                 <div class="explore hidden">
-                    <div id="debug-charts" class="debug-charts explore-chart-container"></div>
+                    <div id="debug-charts" class="debug-charts explore-chart-container" style="overflow:scroll;"></div>
                 </div>
                 <script type="text/template" id="debug-chart-template">
                     <div class="debug-chart card explore-chart" data-key="<%= key %>">

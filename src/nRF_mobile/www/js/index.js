@@ -39,6 +39,9 @@ window.SHOW_BADGE_CONSOLE = false;
 //
 DEBUG_MODE_ENABLED = true
 
+FREE_MEET = true
+VISUALIZATION = true
+
 
 /***********************************************************************
  * Model Declarations
@@ -49,6 +52,7 @@ DEBUG_MODE_ENABLED = true
  * Holds the data of a group, constructed from json data from the server
  */
 function Group(groupJson) {
+    console.log(groupJson)
     this.name = groupJson.name;
     this.key = groupJson.key;
     this.visualization_ranges = groupJson.visualization_ranges;
@@ -165,6 +169,18 @@ function Meeting(group, members, type, moderator, description, location) {
     this.memberKeys = memberIds;
     this.memberInitials = memberInitials;
 
+  
+    this.updateMeeting = function() {
+      var memberIds = [];
+      var memberInitials = [];
+      $.each(this.members, function(index, member) {
+        memberIds.push(member.key);
+        memberInitials.push(getInitials(member.name));
+        member.meeting = meeting;
+      });
+      this.memberKeys = memberIds;
+      this.memberInitials = memberInitials;
+    }
 
     this.syncLogFile = function(isComplete, endingMethod) {
         app.syncLogFile(this.getLogName(), !!isComplete, endingMethod, new Date().toJSON());
@@ -232,7 +248,8 @@ mainPage = new Page("main",
         //  go into the explore mode, where it just finds badges around it
         //
         var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
-        app.exploreMode = app.exploreEnabled && (groupId === "EXPLORE");
+        app.exploreMode = (app.exploreEnabled && (groupId === "EXPLORE")) || FREE_MEET
+
         
         $(".clear-scan-button").click(function() {
             app.clearScannedBadges();
@@ -255,7 +272,7 @@ mainPage = new Page("main",
             //
             // in explore mode, it doesnt matter if we only have one person, but do still need 1
             //
-            if (app.exploreMode) {
+            if (app.exploreMode && !FREE_MEET) {
                 if (activeMembers < 1) {
                     navigator.notification.alert("Choose a badge to inspect.");
                     return;
@@ -278,15 +295,22 @@ mainPage = new Page("main",
     },
     function onShow() {
         // 
-        // each time the main page showes, we update weather or not we are on exploremode
+        // each time the main page showes, we update wether or not we are on exploremode
         //
         var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
-        app.exploreMode = app.exploreEnabled && (groupId === "EXPLORE");
-        if (app.exploreMode) {
+        app.exploreMode = (app.exploreEnabled && (groupId === "EXPLORE")) || FREE_MEET;
+        if (FREE_MEET) {
+            $(".explore").addClass("hidden");
+            $(".standard").addClass("hidden");
+            $(".free").removeClass("hidden");
+        }
+        else if (app.exploreMode) {
+            $(".free").addClass("hidden");
             $(".explore").removeClass("hidden");  // show all the explore elements
             $(".standard").addClass("hidden");    // remove all the standard elements
             $(".explore-chart-container").css("margin-top", "-100px")
         } else {
+            $(".free").addClass("hidden");
             $(".standard").removeClass("hidden");
             $(".explore").addClass("hidden");
             $(".explore-chart-container").css("margin-top", "0px")
@@ -323,7 +347,7 @@ mainPage = new Page("main",
             // there will be no local JSON for the explore group, becuase
             //   it changes with each exploration, so lets just skip this step
             //
-            if (app.exploreMode) {
+            if (app.exploreMode || FREE_MEET) {
                 app.refreshGroupData(false);
                 return;
             }
@@ -358,7 +382,7 @@ mainPage = new Page("main",
 
             $("#devicelistContainer").removeClass("hidden");
 
-            $("#devicelist").empty();
+            $(".devicelist").empty();
             if (! app.group || ! app.group.members) {
                 console.log("Couldnt find any members in ", app.group)
                 return;
@@ -369,7 +393,7 @@ mainPage = new Page("main",
                 // we dont bother with this in explore mode, becuase we dont have
                 //   group memebers to add. rather, we add them as we find anything around us
                 if (!app.exploreMode) {
-                    $("#devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-full battery-icon' /><i class='icon ion-happy present-icon' /></li>".format(member)));
+                    $(".devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-empty battery-icon' /></li>".format(member)));
                 }
             }
 
@@ -378,11 +402,11 @@ mainPage = new Page("main",
         },
         displayActiveBadges: function() {
 
-            $("#devicelist .item").removeClass("active");
-            $("#devicelist .item .battery-icon").removeClass("red yellow green");
+            $(".devicelist .item").removeClass("active ion-battery-half ion-battery-full ion-battery-empty ion-battery-low");
+            $(".devicelist .item .battery-icon").removeClass("red yellow green");
             for (var i = 0; i < app.group.members.length; i++) {
                 var member = app.group.members[i];
-                var $el = $("#devicelist .item[data-device='" + member.badgeId + "']");
+                var $el = $(".devicelist .item[data-device='" + member.badgeId + "']");
 
                 if (member.active) {
                     $el.addClass("active");
@@ -390,11 +414,11 @@ mainPage = new Page("main",
                 // we ad a voltage indicator regardless of the activity state
                 if (member.voltage) {
                     if (member.voltage >= BATTERY_YELLOW_THRESHOLD) {
-                        $el.find(".battery-icon").addClass("green");
+                        $el.find(".battery-icon").addClass("green ion-battery-full");
                     } else if (member.voltage >= BATTERY_RED_THRESHOLD) {
-                        $el.find(".battery-icon").addClass("yellow");
+                        $el.find(".battery-icon").addClass("yellow ion-battery-half");
                     } else {
-                        $el.find(".battery-icon").addClass("red");
+                        $el.find(".battery-icon").addClass("red ion-battery-low");
                     }
                 }
             }
@@ -477,22 +501,33 @@ meetingPage = new Page("meeting",
         }.bind(this));
         this.$debugCharts = $("#debug-charts");
         $('#debug-chart-button').featherlight(this.$debugCharts, {persist:true});
+        $('#add-rem-member-button').featherlight($("#devicelist-add-rem"));
+        $('#add-rem-member-button').click(function() {
+          app.scanForBadges()  
+        })
 
     },
     function onShow() {
         // 
         // each time the main page showes, we update weather or not we are on exploremode
         //
-        if (app.exploreMode) {
-            $(".explore").removeClass("hidden");
+        if (FREE_MEET) {
+            $(".explore").addClass("hidden");
             $(".standard").addClass("hidden");
+            $(".free").removeClass("hidden");
+        }
+        else if (app.exploreMode) {
+            $(".free").addClass("hidden");
+            $(".standard").addClass("hidden");    // remove all the standard elements
             $(".explore-chart-container").css("margin-top", "-100px")
+            $(".explore").removeClass("hidden");  // show all the explore elements
+
         } else {
+            $(".free").addClass("hidden");
             $(".standard").removeClass("hidden");
             $(".explore").addClass("hidden");
             $(".explore-chart-container").css("margin-top", "0px")
         }
-    
         this.createMemberUserList();
 
         window.plugins.insomnia.keepAwake();
@@ -610,13 +645,16 @@ meetingPage = new Page("meeting",
 
             clearInterval(this.chartTimeout);
             this.chartTimeout = setInterval(function() {
-                meetingPage.updateCharts();               // known to cause noisy memory useage, poissibly leaky
+                meetingPage.updateCharts();               // known to cause noisy memory useage, possibly leaky
             }, CHART_UPDATE_INTERVAL);
 
             var $mmVis = $("#meeting-mediator");
             $mmVis.empty();
             this.mm = null;
-            if (app.meeting.showVisualization) {
+            console.log("Show=", app.meeting.showVisualization)
+            console.log("second=",(!app.exploreMode) || FREE_MEET)
+            if (app.meeting.showVisualization && ((!app.exploreMode) || FREE_MEET))
+            {
                 $("#visualization").removeClass("hidden");
                 $("#meetingmemberlist").addClass("hidden");
                 this.mm = new MM({participants: app.meeting.memberKeys,
@@ -685,24 +723,24 @@ meetingPage = new Page("meeting",
             $("#meetingmemberlist-content").empty();
             for (var i = 0; i < app.meeting.members.length; i++) {
                 var member = app.meeting.members[i];
-                $("#meetingmemberlist-content").append($("<li class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-full battery-icon' /></li>".format(member)));
+                $("#meetingmemberlist-content").append($("<li class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-empty battery-icon' /></li>".format(member)));
             }
 
             this.displayVoltageLevels();
         },
         displayVoltageLevels: function() {
 
-            $("#meetingmemberlist-content .item .battery-icon").removeClass("red yellow green");
+            $("#meetingmemberlist-content .item .battery-icon").removeClass("red yellow green ion-battery-empty ion-battery-half ion-battery-low ion-battery-full");
             for (var i = 0; i < app.meeting.members.length; i++) {
                 var member = app.meeting.members[i];
                 var $el = $("#meetingmemberlist-content .item[data-device='" + member.badgeId + "']");
                 if (member.voltage) {
                     if (member.voltage >= BATTERY_YELLOW_THRESHOLD) {
-                        $el.find(".battery-icon").addClass("green");
+                        $el.find(".battery-icon").addClass("green ion-battery-full");
                     } else if (member.voltage >= BATTERY_RED_THRESHOLD) {
-                        $el.find(".battery-icon").addClass("yellow");
+                        $el.find(".battery-icon").addClass("yellow ion-battery-half");
                     } else {
-                        $el.find(".battery-icon").addClass("red");
+                        $el.find(".battery-icon").addClass("red ion-battery-low");
                     }
                 }
             }
@@ -813,16 +851,18 @@ app = {
         //   SLOANers possibly guessing to type "EXPLORE" into the groupID field
         //   and getting access to our debug mode
         //
-        app.exploreEnabled = DEBUG_MODE_ENABLED;
-        app.exploreMode = app.exploreEnabled;
+      
+        app.exploreEnabled = DEBUG_MODE_ENABLED || FREE_MEET;
+        app.exploreEnabled = DEBUG_MODE_ENABLED || FREE_MEET;
+        app.exploreMode = app.exploreEnabled || FREE_MEET;
         
         // if we are in explore mode, we will generate an empty group to begin
         //    with, then fill it as we find badges.
-        if (app.exploreMode) {
+        if (app.exploreMode || FREE_MEET) {
             app.group = new Group({name:"Explored Group", 
                                     key:"Explore", 
                                     visualization_ranges:[{start:0, 
-                                                          end:0}],
+                                                          end:Infinity}],
                                     members:[]
                                    });
         }
@@ -866,7 +906,7 @@ app = {
         }
 
         var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
-        if (! groupId) {
+        if (! groupId && !FREE_MEET) {
             this.showPage(settingsPage);
         } else {
             this.showPage(mainPage);
@@ -1140,7 +1180,7 @@ app = {
         for (var i = 0; i < app.group.members.length; i++) {
             var member = app.group.members[i];
             if (activeBadge == member.badgeId) {
-                if (!app.exploreMode) {
+                if ((!app.exploreModec) && typeof member.active === "undefined") {
                     member.active = true;
                 }
                 member.voltage = voltage;
@@ -1152,13 +1192,31 @@ app = {
         // normally we wouldnt do anything if the found MAC didnt match a MAC in the group,
         //   but in explore mode we will simply add that MAC to our `fake` group
         if (app.exploreMode) {
-            var newMember = new GroupMember({name:activeBadge, key: activeBadge, badge:activeBadge});
-            newMember.active = false;
-            newMember.voltage = voltage;
-            app.group.members.push(newMember);
-            console.log("Discovered", newMember);
-            $("#devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-full battery-icon' /><i class='icon ion-happy present-icon' /></li>".format(newMember)));
-        }
+            var newMember;
+            if ( FREE_MEET) {      
+              $.get("http://api.randomuser.me/?seed="+activeBadge+"?inc=name,", function(response) {
+                console.log(JSON.stringify(response))
+                var owner = response.results[0].name.first + " " + response.results[0].name.last
+                newMember = new GroupMember({name:owner, key: activeBadge, badge:activeBadge});
+                newMember.active = false;
+                newMember.voltage = voltage;
+                app.group.members.push(newMember);
+                console.log("Discovered", newMember);
+                $(".devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-empty battery-icon' /></li>".format(newMember)));
+                mainPage.displayActiveBadges();
+              })
+            }
+            else {
+              newMember = new GroupMember({name:activeBadge, key: activeBadge, badge:activeBadge});
+              newMember.active = FREE_MEET;
+              newMember.voltage = voltage;
+              app.group.members.push(newMember);
+              console.log("Discovered", newMember);
+              $(".devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-full battery-icon' /></li>".format(newMember)));
+              mainPage.displayActiveBadges();
+          }
+      }
+          
     },
     stopScan: function scanStopped() {
         app.scanning = false;
@@ -1171,7 +1229,12 @@ app = {
         }
         for (var i = 0; i < app.group.members.length; i++) {
             var member = app.group.members[i];
-            member.active = !!~app.activeBadges.indexOf(member.badgeId);
+            if (!member.manualDisable) {
+              member.active = app.activeBadges.indexOf(member.badgeId) != -1;
+            }
+            else {
+              member.active = false
+            }
         }
     },
     toggleActiveUser: function(key) {
@@ -1180,7 +1243,25 @@ app = {
             var member = app.group.members[i];
             if (member.key === key) {
                 member.active = !member.active;
+                member.manualDisable = !member.active
                 member.active &= !!~app.activeBadges.indexOf(member.badgeId);
+                if(app.meeting) {
+                  if (member.active) {
+                    app.meeting.members.push(member)
+                    member.badge.startRecording()
+                    
+                  } else {
+                    for (var j = 0; j < app.meeting.members.length; j++) {
+                      if (app.meeting.members[j].key == key) {
+                        app.meeting.members.splice(j, 1)
+                        break;
+                      }
+                    }
+                  }
+                  app.meeting.updateMeeting()
+                  console.log("initing charts with ", app.meeting.members)
+                  meetingPage.initCharts()
+                } 
                 mainPage.displayActiveBadges();
                 return;
             }
@@ -1198,10 +1279,10 @@ app = {
             app.group = new Group({name:"Explored Group", 
                                     key:"Explore", 
                                     visualization_ranges:[{start:0, 
-                                                          end:0}],
+                                                          end:Infinity}],
                                     members:[]
                                    });
-            $("#devicelist").empty();
+            $(".devicelist").empty();
         }
         app.activeBadges = [];
         app.markActiveUsers();

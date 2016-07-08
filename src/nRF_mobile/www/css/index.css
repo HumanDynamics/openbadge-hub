@@ -225,14 +225,13 @@ footer {
 }
 .meeting-member-list .item i,
 .devicelist .item i {
-    color: #ccc;
     font-size:26px;
     float:right;
     margin-right:10px;
     margin-left:15px;
 }
-.devicelist .item.active i.present-icon {
-    color: #3dd928;
+.devicelist .item.active {
+    background-color: antiquewhite;
 }
 .meeting-member-list {
     z-index:0;
@@ -245,13 +244,13 @@ footer {
     display:none;
 }
 
-.active .battery-icon.green {
+.green {
     color: #3dd928;
 }
-.active .battery-icon.yellow {
-    color: #ebe31c;
+.yellow {
+    color: #b4b400;
 }
-.active .battery-icon.red {
+.red {
     color: #e7241f;
 }
 
@@ -311,6 +310,10 @@ footer {
     padding: 0 20px;
 }
 
+
+.ion-person-add {
+  
+}
 
 
 
