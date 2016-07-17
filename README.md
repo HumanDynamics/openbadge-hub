@@ -1,4 +1,4 @@
-# RoundTable App
+# OpenBadge Hub
 
 ## Installation Instructions
 

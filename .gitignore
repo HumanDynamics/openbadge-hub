@@ -20,3 +20,4 @@ data.db
 env/
 localsettings.js
 
+.DS_Store
