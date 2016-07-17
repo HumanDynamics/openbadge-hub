@@ -57,10 +57,11 @@ function Chunk() {
      * @param newData the byte array that represents more samples
      */
     this.addSamples = function(newData) {
-        this.samples = this.samples.concat(newData);
+        Array.prototype.push.apply(this.samples, newData);
+        //this.samples = this.samples.concat(newData);
         if (this.samples.length > this.numSamples) {
             // error
-            console.error("Too many samples in chunk!",sampleLength);
+            console.error("Too many samples in chunk!",this.samples.length);
         }
 
     }.bind(this);
@@ -115,7 +116,7 @@ function BadgeDialogue(badge) {
     this.badge = badge;
 
     this.workingChunk = null; //chunk we are currently building
-    this.chunks = []; //will store chunks once Received
+    //this.chunks = []; //will store chunks once Received
 
     this.log = function(str) {
         this.badge.log(str);
@@ -196,7 +197,7 @@ function BadgeDialogue(badge) {
     }.bind(this);
 
     /**
-     * Once the badge has determined it has received a header from the badge, it will call this
+     * Once the device has determined it has received a header from the badge, it will call this
      */
     this.onHeaderReceived = function(data) {
         this.log("Received a header: ");
@@ -215,11 +216,11 @@ function BadgeDialogue(badge) {
 
             if (this.workingChunk && this.workingChunk.getTimeStamp() != timestamp) {
                 // looks like the chunk we were working on is complete! Let's save it.
-                this.chunks.push(this.workingChunk);
+                //this.chunks.push(this.workingChunk);
                 if (this.onChunkCompleted) {
                     this.onChunkCompleted(this.workingChunk);
                 }
-                this.log("Added another chunk, I now have " + this.chunks.length + " full chunks");
+                //this.log("Added another chunk, I now have " + this.chunks.length + " full chunks");
             }
 
             this.workingChunk = new Chunk();
@@ -257,9 +258,9 @@ function BadgeDialogue(badge) {
     /**
      * @returns the array of chunk objects that this badge has extracted
      */
-    this.getChunks = function () {
-        return this.chunks;
-    }.bind(this);
+    //this.getChunks = function () {
+    //    return this.chunks;
+    //}.bind(this);
 
     this.nowAsSecAndMs = function () {
         var d = new Date();

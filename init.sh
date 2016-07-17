@@ -1,3 +1,4 @@
+#!/bin/bash
 rm -rf platforms/*
 rm -rf plugins/*
 
@@ -7,6 +8,7 @@ cd www/js
 npm install
 cd ../../
 npm install -g coffee-script
+npm install -g browserify
 
 cordova plugin add cordova-plugin-bluetoothle
 cordova plugin add https://github.com/katzer/cordova-plugin-background-mode.git

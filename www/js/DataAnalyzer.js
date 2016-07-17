@@ -43,19 +43,19 @@ function checkIntersect(startA,endA,startB,endB) {
  This class stores samples for a badge and convert them into talking intervals
  */
 function DataAnalyzer() {
-    var samples = []; // array of samples : timestamp, volume
+    this.samples = []; // array of samples : timestamp, volume
     //var smoother = new SmoothArray(SAMPLES_SMOOTHING); // array object used for caluclating smooth value
-    var cutoff = CUTOFF_PROIOR;
+    this.cutoff = CUTOFF_PROIOR;
     //var speakThreashold = SPEAK_THRESHOLD_PRIOR;
-    var slidingPower = new SlidingPower(NOISE_POWER_SAMPLES);
+    this.slidingPower = new SlidingPower(NOISE_POWER_SAMPLES);
     //var signalMean = new MedianArray(POWER_SAMPLES_MEAN);
-    var meanArray = new FixedLengthArray(POWER_SAMPLES_MEAN);
-    var mean = MEAN_INIT_VALUE;
+    this.meanArray = new FixedLengthArray(POWER_SAMPLES_MEAN);
+    this.mean = MEAN_INIT_VALUE;
 
     this.purgeSamples = function (timestamp) {
-        while (samples.length > 0 && (timestamp - samples[0].timestamp > BUFFER_LENGTH)) {
+        while (this.samples.length > 0 && (timestamp - this.samples[0].timestamp > BUFFER_LENGTH)) {
             //dataLog("Removing from samples:",samples[0]);
-            samples.shift();
+            this.samples.shift();
         }
     }.bind(this);
 
@@ -75,8 +75,8 @@ function DataAnalyzer() {
     // Code will only add samples newer than the last timestamp
     this.addSample = function (vol, timestamp, duration) {
         // is it a new sample?
-        if (samples.length > 0) {
-            var lastTimestamp = samples[samples.length - 1].timestamp;
+        if (this.samples.length > 0) {
+            var lastTimestamp = this.samples[this.samples.length - 1].timestamp;
             if (timestamp <= lastTimestamp) {
                 //dataLog("Skipping existing sample: "+timestamp+" "+dateToString(timestamp));
                 return false;
@@ -87,27 +87,27 @@ function DataAnalyzer() {
         this.purgeSamples(timestamp);
 
         // clip the sample
-        var volClipped = vol > cutoff ? cutoff : vol;
+        var volClipped = vol > this.cutoff ? this.cutoff : vol;
 
         // update mean/median tracking array
-        meanArray.push(volClipped);
+        this.meanArray.push(volClipped);
 
         // smooth it
         //var volClippedSmooth = smoother.push(volClipped);
         var volClippedSmooth = volClipped;
 
         // and check if it's above the threshold
-        var volPower = slidingPower.push(volClipped,mean);
+        var volPower = this.slidingPower.push(volClipped, this.mean);
         var isSpeak = volPower > NOISE_POWER_THRESHOLD ? 1 : 0;
 
         // add sample to array
-        samples.push({
+        this.samples.push({
             'volRaw': vol,
             'volClipped': volClipped,
             'volClippedSmooth': volClippedSmooth,
-            'cutoff': cutoff,
+            'cutoff': this.cutoff,
             'volPower': volPower,
-            'mean': mean,
+            'mean': this.mean,
             'isSpeak': isSpeak,
             'timestamp': timestamp,
             'duration': duration
@@ -118,23 +118,23 @@ function DataAnalyzer() {
 
     // updates the mean / median (we don't want to do this for every sample)
     this.updateMean = function() {
-        var tempMean = median(meanArray.getSamplesArray());
+        var tempMean = median(this.meanArray.getSamplesArray());
         if (tempMean) {
-            mean = median(meanArray.getSamplesArray());
+            mean = median(this.meanArray.getSamplesArray());
         }
-    }
+    }.bind(this);
 
     // updates the cutoff
     this.updateCutoff = function () {
-        if (samples.length == 0) {
+        if (this.samples.length == 0) {
             return CUTOFF_PROIOR;
         }
 
-        var m = meanAndStd(samples, function (sample) {
+        var m = meanAndStd(this.samples, function (sample) {
             return sample.volRaw
         });
-        cutoff = (CUTOFF_PROIOR * PRIOR_WEIGHT) + (m.mean + 2 * m.std) * (1 - PRIOR_WEIGHT);
-        dataLog("Cutoff prior,value,mean and std:"+ CUTOFF_PROIOR+" "+cutoff+" "+m.mean+" "+m.std);// calc adjusted cutoff (using samples and prior)
+        this.cutoff = (CUTOFF_PROIOR * PRIOR_WEIGHT) + (m.mean + 2 * m.std) * (1 - PRIOR_WEIGHT);
+        dataLog("Cutoff prior,value,mean and std:"+ CUTOFF_PROIOR+" "+this.cutoff+" "+m.mean+" "+m.std);// calc adjusted cutoff (using samples and prior)
     }.bind(this);
 
     // updates the threshold
@@ -153,7 +153,7 @@ function DataAnalyzer() {
     */
 
     this.getSamples = function () {
-        return samples;
+        return this.samples;
     }.bind(this);
 
     this.clearData = function() {
@@ -206,58 +206,59 @@ function generateTalkIntervals(speakSamples) {
 
 
 function FixedLengthArray(numSamples) {
-    var numSamples = numSamples
+    this.numSamples = numSamples
     // Number of samples that will be used for smoothing the samples
-    var samplesArray = [];
-    var pos = 0;
+    this.samplesArray = [];
+    this.pos = 0;
 
     this.push = function(vol) {
         // adds the sample to the correct location
-        samplesArray[pos] = vol;
-        pos = (pos +1) % numSamples;
+        this.samplesArray[this.pos] = vol;
+        this.pos = (this.pos +1) % this.numSamples;
     }.bind(this);
 
     this.getSamplesArray = function() {
-        return samplesArray;
+        return this.samplesArray;
     }.bind(this);
 }
 
 
 //Class for smoothening the volume signal
 function SmoothArray(numSamples) {
-    var numSamples = numSamples
+    this.numSamples = numSamples
     // Number of samples that will be used for smoothing the samples
-    var smoothArray = [];
-    var pos = 0;
+    this.smoothArray = [];
+  
+    this.pos = 0;
 
     this.push = function(vol) {
         // adds the sample to the correct location
-        smoothArray[pos] = vol;
-        pos = (pos +1) % numSamples;
+        this.smoothArray[this.pos] = vol;
+        this.pos = (this.pos +1) % this.numSamples;
 
         // returns smoothened value
-        var sum = smoothArray.reduce(function(a, b) { return a + b; });
-        var mean = sum / smoothArray.length;
+        var sum = this.smoothArray.reduce(function(a, b) { return a + b; });
+        var mean = sum / this.smoothArray.length;
         return mean;
     }.bind(this);
 
     this.getSmoothArray = function() {
-        return smoothArray;
+        return this.smoothArray;
     }.bind(this);
 }
 
 function MedianArray(numSamples) {
-    var numSamples = numSamples
+    this.numSamples = numSamples
     // Number of samples that will be used for smoothing the samples
-    var samplesArray = [];
-    var pos = 0;
+    this.samplesArray = [];
+    this.pos = 0;
 
     this.push = function(vol) {
         // adds the sample to the correct location
-        samplesArray[pos] = vol;
-        pos = (pos +1) % numSamples;
+        this.samplesArray[this.pos] = vol;
+        this.pos = (this.pos +1) % this.numSamples;
 
-        return median(samplesArray);
+        return median(this.samplesArray);
     }.bind(this);
 }
 
@@ -279,30 +280,30 @@ function MinArray(numSamples) {
 //Class for calculating power using a sliding window
 // P = 1/N*sum((x-mean)^2)
 function SlidingPower(numSamples) {
-    var numSamples = numSamples
+    this.numSamples = numSamples
     // Number of samples that will be used for smoothing the samples
-    var samplesArray = [];
-    var pos = 0;
+    this.samplesArray = [];
+    this.pos = 0;
 
     this.push = function(vol,mean) {
         // adds the element to the correct location
-        samplesArray[pos] = (vol - mean)*(vol - mean);
-        pos = (pos +1) % numSamples;
+        this.samplesArray[this.pos] = (vol - mean)*(vol - mean);
+        this.pos = (this.pos +1) % numSamples;
 
         // return power calc, if there are enough samples
-        if (samplesArray.length == numSamples) {
-            var sum = samplesArray.reduce(function (a, b) {
+        if (this.pos === 0) {
+            var sum = this.samplesArray.reduce(function (a, b) {
                 return a + b;
             });
-            var mean = sum / samplesArray.length;
+            var mean = sum / this.samplesArray.length;
             return mean;
         } else {
             return 0;
         }
-    };
+    }.bind(this);
 
     this.getSamplesArray = function() {
-        return samplesArray;
+        return this.samplesArray;
     }.bind(this);
 }
 

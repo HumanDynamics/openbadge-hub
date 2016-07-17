@@ -32,6 +32,14 @@ RECORDING_TIMEOUT_MINUTES = 5;
 window.SHOW_BADGE_CONSOLE = false;
 
 
+//
+// set to false in the real app, or keep true if we're okay with
+//   SLOANers possibly guessing to type "EXPLORE" into the groupID field
+//   and getting access to our debug mode
+//
+DEBUG_MODE_ENABLED = true
+
+
 /***********************************************************************
  * Model Declarations
  */
@@ -219,21 +227,44 @@ PAGES = [];
  */
 mainPage = new Page("main",
     function onInit() {
-        $("#clear-scan-button").click(function() {
+        //
+        // Setting the group id in the settings page to "explore" will cause the app to 
+        //  go into the explore mode, where it just finds badges around it
+        //
+        var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
+        app.exploreMode = app.exploreEnabled && (groupId === "EXPLORE");
+        
+        $(".clear-scan-button").click(function() {
             app.clearScannedBadges();
             mainPage.displayActiveBadges();
         });
         $("#settings-button").click(function() {
             app.showPage(settingsPage);
         });
-        $("#startMeetingButton").click(function() {
+        $(".startMeetingButton").click(function() {
 
             var activeMembers = 0;
+            var memberList = []
             for (var i = 0; i < app.group.members.length; i++) {
                 var member = app.group.members[i];
                 if (member.active) {
                     activeMembers += 1;
+                    memberList.push(member)
                 }
+            }
+            //
+            // in explore mode, it doesnt matter if we only have one person, but do still need 1
+            //
+            if (app.exploreMode) {
+                if (activeMembers < 1) {
+                    navigator.notification.alert("Choose a badge to inspect.");
+                    return;
+                }
+                
+                app.meeting = new Meeting(app.group, memberList, "", "", "", "");
+                app.showPage(meetingPage);
+                return;
+                
             }
             if (activeMembers < 2) {
                 navigator.notification.alert("Need at least 2 people present to start a meeting.");
@@ -246,6 +277,20 @@ mainPage = new Page("main",
         });
     },
     function onShow() {
+        // 
+        // each time the main page showes, we update weather or not we are on exploremode
+        //
+        var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
+        app.exploreMode = app.exploreEnabled && (groupId === "EXPLORE");
+        if (app.exploreMode) {
+            $(".explore").removeClass("hidden");  // show all the explore elements
+            $(".standard").addClass("hidden");    // remove all the standard elements
+            $(".explore-chart-container").css("margin-top", "-100px")
+        } else {
+            $(".standard").removeClass("hidden");
+            $(".explore").addClass("hidden");
+            $(".explore-chart-container").css("margin-top", "0px")
+        }
         app.clearScannedBadges();
         if (app.bluetoothInitialized) {
             // after bluetooth is disabled, it's automatically re-enabled.
@@ -274,7 +319,14 @@ mainPage = new Page("main",
             app.scanForBadges();
         },
         loadGroupData: function() {
-
+            //
+            // there will be no local JSON for the explore group, becuase
+            //   it changes with each exploration, so lets just skip this step
+            //
+            if (app.exploreMode) {
+                app.refreshGroupData(false);
+                return;
+            }
             // load the group from localstorage, if it's saved there.
             var groupJSON = localStorage.getItem(LOCALSTORAGE_GROUP);
             if (groupJSON) {
@@ -308,11 +360,17 @@ mainPage = new Page("main",
 
             $("#devicelist").empty();
             if (! app.group || ! app.group.members) {
+                console.log("Couldnt find any members in ", app.group)
                 return;
             }
+            
             for (var i = 0; i < app.group.members.length; i++) {
                 var member = app.group.members[i];
-                $("#devicelist").append($("<li class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-full battery-icon' /><i class='icon ion-happy present-icon' /></li>".format(member)));
+                // we dont bother with this in explore mode, becuase we dont have
+                //   group memebers to add. rather, we add them as we find anything around us
+                if (!app.exploreMode) {
+                    $("#devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-full battery-icon' /><i class='icon ion-happy present-icon' /></li>".format(member)));
+                }
             }
 
             app.markActiveUsers();
@@ -324,18 +382,19 @@ mainPage = new Page("main",
             $("#devicelist .item .battery-icon").removeClass("red yellow green");
             for (var i = 0; i < app.group.members.length; i++) {
                 var member = app.group.members[i];
-                if (member.active) {
-                    var $el = $("#devicelist .item[data-device='" + member.badgeId + "']");
-                    $el.addClass("active");
+                var $el = $("#devicelist .item[data-device='" + member.badgeId + "']");
 
-                    if (member.voltage) {
-                        if (member.voltage >= BATTERY_YELLOW_THRESHOLD) {
-                            $el.find(".battery-icon").addClass("green");
-                        } else if (member.voltage >= BATTERY_RED_THRESHOLD) {
-                            $el.find(".battery-icon").addClass("yellow");
-                        } else {
-                            $el.find(".battery-icon").addClass("red");
-                        }
+                if (member.active) {
+                    $el.addClass("active");
+                }
+                // we ad a voltage indicator regardless of the activity state
+                if (member.voltage) {
+                    if (member.voltage >= BATTERY_YELLOW_THRESHOLD) {
+                        $el.find(".battery-icon").addClass("green");
+                    } else if (member.voltage >= BATTERY_RED_THRESHOLD) {
+                        $el.find(".battery-icon").addClass("yellow");
+                    } else {
+                        $el.find(".battery-icon").addClass("red");
                     }
                 }
             }
@@ -351,7 +410,12 @@ mainPage = new Page("main",
 settingsPage = new Page("settings",
     function onInit() {
         $("#saveButton").click(function() {
-            localStorage.setItem(LOCALSTORAGE_GROUP_KEY, $("#groupIdField").val());
+            //
+            //  we want the UPPER Case persion of group ID, because its case insensitive anyways, and 
+            //    the id's are stored on the server as uppercase. convert here for uniformity
+            //
+            var groupKey = $("#groupIdField").val().toUpperCase()
+            localStorage.setItem(LOCALSTORAGE_GROUP_KEY, groupKey); 
             app.showPage(mainPage);
             toastr.success("Settings Saved!");
         });
@@ -371,7 +435,7 @@ settingsPage = new Page("settings",
  */
 meetingConfigPage = new Page("meetingConfig",
     function onInit() {
-        $("#startMeetingConfirmButton").click(function() {
+        $(".startMeetingConfirmButton").click(function() {
             var type = $("#meetingTypeField").val();
             var moderator = $("#mediatorField option:selected").data("key");
             var location = $("#meetingLocationField").val();
@@ -416,6 +480,19 @@ meetingPage = new Page("meeting",
 
     },
     function onShow() {
+        // 
+        // each time the main page showes, we update weather or not we are on exploremode
+        //
+        if (app.exploreMode) {
+            $(".explore").removeClass("hidden");
+            $(".standard").addClass("hidden");
+            $(".explore-chart-container").css("margin-top", "-100px")
+        } else {
+            $(".standard").removeClass("hidden");
+            $(".explore").addClass("hidden");
+            $(".explore-chart-container").css("margin-top", "0px")
+        }
+    
         this.createMemberUserList();
 
         window.plugins.insomnia.keepAwake();
@@ -462,11 +539,17 @@ meetingPage = new Page("meeting",
     },
     {
         confirmBeforeHide: function() {
+            if (app.exploreMode) {
+                this.onMeetingComplete();
+                return true;
+            }
+            
             navigator.notification.confirm("Are you sure?", function(result) {
                 if (result == 1) {
                     this.onMeetingComplete();
                 }
             }.bind(this));
+            
             return true;
         },
         onBluetoothInit: function() {
@@ -487,7 +570,7 @@ meetingPage = new Page("meeting",
                 app.showMainPage();
             }.bind(this), CHECK_MEETING_LENGTH_REACTION_TIME);
         },
-        setMeetingTimeout: function() {
+        setMeetingTimeout: function() { 
 
             this.clearMeetingTimeout();
 
@@ -527,7 +610,7 @@ meetingPage = new Page("meeting",
 
             clearInterval(this.chartTimeout);
             this.chartTimeout = setInterval(function() {
-                meetingPage.updateCharts();
+                meetingPage.updateCharts();               // known to cause noisy memory useage, poissibly leaky
             }, CHART_UPDATE_INTERVAL);
 
             var $mmVis = $("#meeting-mediator");
@@ -725,6 +808,25 @@ app = {
      * Initializations
      */
     initialize: function() {
+        //
+        // set exploreEnabled to false in the real app, or keep true if we're okay with
+        //   SLOANers possibly guessing to type "EXPLORE" into the groupID field
+        //   and getting access to our debug mode
+        //
+        app.exploreEnabled = DEBUG_MODE_ENABLED;
+        app.exploreMode = app.exploreEnabled;
+        
+        // if we are in explore mode, we will generate an empty group to begin
+        //    with, then fill it as we find badges.
+        if (app.exploreMode) {
+            app.group = new Group({name:"Explored Group", 
+                                    key:"Explore", 
+                                    visualization_ranges:[{start:0, 
+                                                          end:0}],
+                                    members:[]
+                                   });
+        }
+        
         this.initBluetooth();
 
         cordova.plugins.backgroundMode.setDefaults({title:'OpenBadge Meeting', text:'OpenBadge Meeting in Progress'});
@@ -952,7 +1054,12 @@ app = {
             app.onrefreshGroupDataStart();
         }
 
-
+        // we exit early here to ensure we dont rewrite our fake group
+        if (app.exploreMode) {          
+            app.onrefreshGroupDataComplete();
+            return;
+        }
+        
         $.ajax(BASE_URL + "get_group/" + groupId + "/", {
             dataType:"json",
             success: function(result) {
@@ -985,26 +1092,25 @@ app = {
      */
     scanForBadges: function() {
         app.activeBadges = app.activeBadges || []
-        if (app.scanning || ! app.group) {
+        if (app.scanning || !( app.group || app.exploreMode)) {
             return;
         }
         $("#scanning").removeClass("hidden");
         app.scanning = true;
         qbluetoothle.stopScan().then(function() {
             qbluetoothle.startScan().then(
-                function(obj){ // success
+                function scanSucess(obj){ // success
                     console.log("Scan completed successfully - "+obj.status)
                     app.onScanComplete();
-                }, function(obj) { // error
+                }, function scanError(obj) { // error
                     console.log("Scan Start error: " + obj.error + " - " + obj.message)
                     app.onScanComplete();
-                }, function(obj) { // progress
-
-                    app.activeBadges.push(obj.address);
+                }, function scanProgress(obj) { // progress
 
                     // extract badge data from advertisement
                     var voltage = null;
                     if (obj.name == "BADGE") {
+                        app.activeBadges.push(obj.address);
                         var adbytes = bluetoothle.encodedStringToBytes(obj.advertisement);
                         var adStr = bluetoothle.bytesToString(adbytes);
                         var adBadgeData = adStr.substring(18, 26);
@@ -1016,7 +1122,7 @@ app = {
                 });
         });
     },
-    onScanComplete: function() {
+    onScanComplete: function scanCompleted() {
         app.scanning = false;
         $("#scanning").addClass("hidden");
         if (! app.group) {
@@ -1025,7 +1131,7 @@ app = {
         app.markActiveUsers();
         mainPage.displayActiveBadges();
     },
-    onScanUpdate: function(activeBadge,voltage) {
+    onScanUpdate: function scanUpdated(activeBadge,voltage) {
         if (! app.group) {
             return;
         }
@@ -1034,20 +1140,33 @@ app = {
         for (var i = 0; i < app.group.members.length; i++) {
             var member = app.group.members[i];
             if (activeBadge == member.badgeId) {
-                member.active = true;
+                if (!app.exploreMode) {
+                    member.active = true;
+                }
                 member.voltage = voltage;
                 mainPage.displayActiveBadges();
                 return;
             }
         }
+        
+        // normally we wouldnt do anything if the found MAC didnt match a MAC in the group,
+        //   but in explore mode we will simply add that MAC to our `fake` group
+        if (app.exploreMode) {
+            var newMember = new GroupMember({name:activeBadge, key: activeBadge, badge:activeBadge});
+            newMember.active = false;
+            newMember.voltage = voltage;
+            app.group.members.push(newMember);
+            console.log("Discovered", newMember);
+            $("#devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-full battery-icon' /><i class='icon ion-happy present-icon' /></li>".format(newMember)));
+        }
     },
-    stopScan: function() {
+    stopScan: function scanStopped() {
         app.scanning = false;
         $("#scanning").addClass("hidden");
         qbluetoothle.stopScan();
     },
     markActiveUsers: function() {
-        if (! app || ! app.group) {
+        if (! app || ! app.group || app.exploreMode) {
             return;
         }
         for (var i = 0; i < app.group.members.length; i++) {
@@ -1055,7 +1174,35 @@ app = {
             member.active = !!~app.activeBadges.indexOf(member.badgeId);
         }
     },
+    toggleActiveUser: function(key) {
+        console.log("Toggling", key)
+        for (var i = 0; i < app.group.members.length; i++) {
+            var member = app.group.members[i];
+            if (member.key === key) {
+                member.active = !member.active;
+                member.active &= !!~app.activeBadges.indexOf(member.badgeId);
+                mainPage.displayActiveBadges();
+                return;
+            }
+            
+        }
+        
+    },
     clearScannedBadges: function() {
+        //
+        // in exploreMode, rather than clearing weather or not we have seen
+        //  a particular badge, we forget all the badges and allow us to 
+        //  see what badges are near us again
+        //
+        if (app.exploreMode) {
+            app.group = new Group({name:"Explored Group", 
+                                    key:"Explore", 
+                                    visualization_ranges:[{start:0, 
+                                                          end:0}],
+                                    members:[]
+                                   });
+            $("#devicelist").empty();
+        }
         app.activeBadges = [];
         app.markActiveUsers();
     },
