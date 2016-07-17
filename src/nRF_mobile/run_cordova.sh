@@ -4,6 +4,6 @@ cd www/js
 coffee --compile mm.coffee
 browserify index.js -o bundle.js
 cd ../..
-cordova run
+cordova run --device
 rm www/js/bundle.js
 rm www/js/mm.js

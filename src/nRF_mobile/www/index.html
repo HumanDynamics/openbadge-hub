@@ -30,16 +30,15 @@
                 <a id="settings-button" class="button button-icon icon button-clear standard explore ion-android-settings"></a>
             </div>
             <div>
-                <div id="devicelistLoader" class="loader-area devicelistMode">
+<!--
+                <div id="devicelistLoader" class="loader-area hidden">
                     <div class="loader"></div>
                 </div>
-                <div class="list hidden devicelistMode" id="devicelistContainer">
+-->
+                <div class="list devicelistMode" id="devicelistContainer">
                     <div class="item item-divider">
-                        <span class="standard">
-                            Group Members
-                        </span>
-                        <span class="explore free hidden">
-                            Found Badges
+                        <span id="device-uuid" class="">
+                            Loading Hub...
                         </span>
 
                         <a class="clear-scan button button-light button-small standard clear-scan-button">Clear</a>
@@ -139,34 +138,44 @@
         <div id="meeting" class="page">
             <div class="bar bar-header bar-balanced standard free">
                 <a id="add-rem-member-button" class="button button-icon icon button-clear ion-person-add"></a>
-                <a id="play-pause-button" class="button button-icon icon button-clear ion-ios-pause"></a>
+                <a id="pause-button" class="button button-icon icon button-clear ion-ios-pause hide-when-paused"></a>
+                <a class="button button-icon icon button-clear ion-ios-play show-when-paused hidden resume-button"></a>
                 <h1 class="title">Meeting</h1>
-                <a id="debug-chart-button" class="button button-icon icon button-clear ion-hammer"></a>
+                <a id="debug-chart-button" class="button button-icon icon button-clear god-only ion-hammer"></a>
             </div>
             <div>
-                <div class="clock-wrapper standard free">
+                <div class="clock-wrapper standard free hide-when-paused">
                     <div class="clock-title">Meeting Duration</div>
                     <div class="clock" id="clock"></div>
                 </div>
               
-                <div id="pause_info" class="hidden">
-                  <div class="clock red" id="count-down"></div>
-                  Meeting now paused. 
-                  <button id="#add-time-button">Add 5 Minutes</button>
+                <div id="pause_info" class="hidden show-when-paused">
+                  <div id="meeting-pause-title">Meeting Paused</div>
+                  
+                  <div id="break-countdown">
+                      <span class="minutes"></span>:<span class="seconds"></span>
+                  </div>
+                  
+                  <button class="button button-block button-calm" id="add-5-button">+5:00</button>
+                  <button class="button button-block button-calm" id="add-15-button">+15:00</button>
+                  
+                  <button id="resume-bar" class="button button-energized hidden show-when-paused resume-button">Resume Meeting</button>
+
                 </div>
               
-                <div id="visualization" class="visualization-wrapper standard free">
+                <div id="visualization" class="visualization-wrapper standard free hide-when-paused">
                     <div id="meeting-mediator" class="meeting-mediator"></div>
                 </div>
+<!--
                 <div id="meetingmemberlist" class="meeting-member-list list list-inset standard free">
                     <div class="item item-divider standard">
                             Meeting Members
                     </div>
                     <ul id="meetingmemberlist-content" class="standard free"></ul>
                 </div>
+-->
                 <div style="height:500px">
                 </div>
-              
               
                 <ul id="devicelist-add-rem" class="devicelist"></ul>
               
@@ -188,7 +197,7 @@
             </div>
             <footer>
                 <div class="button-bar cta-button">
-                    <button class="button button-balanced standard" id="endMeetingButton">End Meeting</button>
+                    <button class="button button-assertive standard free" id="endMeetingButton">End Meeting</button>
                 </div>
             </footer>
         </div>

@@ -246,13 +246,14 @@ footer {
     display:none;
 }
 
-.green {
+.ion-battery-full {
     color: #3dd928;
 }
-.yellow {
-    color: #b4b400;
+
+.ion-battery-half {
+    color: #ebff00;
 }
-.red {
+.ion-battery-low {
     color: #e7241f;
 }
 
@@ -317,7 +318,35 @@ footer {
   
 }
 
+#pause_info {
+  text-align: center;
+  width:300px;
+  margin: 30px auto;
+  font-size: 40px;
+}
 
+#meeting-pause-title {
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+#add-5-button {
+  position:absolute;
+  left: 40px;
+  top:160px;
+  width:100px;
+}
+
+#add-15-button {
+  position:absolute;
+  right: 40px;
+  top:160px;
+  width:100px;
+}
+
+#resume-bar {
+  margin-top: 100px;
+}
 
 .clock-title {
     font-size: 20px;

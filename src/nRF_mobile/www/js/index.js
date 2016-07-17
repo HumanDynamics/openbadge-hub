@@ -6,12 +6,14 @@ struct = require('./struct.js').struct;
 window.LOCALSTORAGE_GROUP_KEY = "groupkey";
 window.LOCALSTORAGE_GROUP = "groupjson";
 
+window.LOCALSTORAGE_PROJECT    = "projectJSON"
+
 window.BADGE_SCAN_INTERVAL = 9000;
 window.BADGE_SCAN_DURATION = 8000;
 
 window.WATCHDOG_SLEEP = 5000;
 
-window.LOG_SYNC_INTERVAL = 30 * 1000;
+window.LOG_SYNC_INTERVAL = 10 * 1000;
 window.CHART_UPDATE_INTERVAL = 5 * 1000;
 window.DEBUG_CHART_WINDOW = 1000 * 60 * 2;
 
@@ -38,9 +40,10 @@ window.SHOW_BADGE_CONSOLE = false;
 //   and getting access to our debug mode
 //
 DEBUG_MODE_ENABLED = true
-
+groupID = "EXPLORE"
 FREE_MEET = true
 VISUALIZATION = true
+
 
 
 /***********************************************************************
@@ -113,10 +116,15 @@ function Meeting(group, members, type, moderator, description, location) {
     this.type = type;
     this.location = location;
     this.startTime = new Date();
+    this.timestamp = this.startTime.getTime()/1000
     this.moderator = moderator;
     this.description = description;
-    this.uuid = group.key + "_" + this.startTime.getTime();
-
+    this.uuid = device.uuid + "_" + this.startTime.getTime();
+  
+    this.linesPosted = 0
+  
+    this.toPost = []
+  
     this.showVisualization = function() {
         var now = new Date().getTime() / 1000;
         var ranges = group.visualization_ranges;
@@ -153,12 +161,14 @@ function Meeting(group, members, type, moderator, description, location) {
       if (paused) {
         data = {
           event:"break",
+          timestamp:new Date() / 1000,
           details:"break_started",
           start:time
         }
       } else {
         data = {
           event:"break",
+          timestamp:new Date() / 1000,
           details:"break_ended",
           end:time
         }
@@ -175,8 +185,9 @@ function Meeting(group, members, type, moderator, description, location) {
       
       var data = {
         event:details,
+        timestamp:new Date() / 1000,
         changed:{badge:member.badgeId,
-                 key:member.key}
+                 member:member.key}
       }
       
       this.writeLog(JSON.stringify(data))
@@ -191,7 +202,7 @@ function Meeting(group, members, type, moderator, description, location) {
     }.bind(this);
 
     this.writeLog = function(str) {
-        return window.fileStorage.save(this.getLogName(),str + "\n");
+      return window.fileStorage.save(this.getLogName(), str + "\n");
     }.bind(this);
 
 
@@ -225,14 +236,17 @@ function Meeting(group, members, type, moderator, description, location) {
     }
 
     this.syncLogFile = function(isComplete, endingMethod) {
-        app.syncLogFile(this.getLogName(), !!isComplete, endingMethod, new Date().toJSON());
+      app.getCompletedMeetings(function (meetings) {
+        app.syncLogFile(this.getLogName(), !!isComplete, endingMethod, new Date().toJSON(), meetings);
+      }.bind(this))
     }.bind(this);
 
     var initialData = {
         uuid: this.uuid,
         group: this.group.key,
         members: memberIds,
-        startTime: this.startTime.toJSON(),
+        start_time: this.startTime.toJSON(),
+        timestamp: this.timestamp,
         moderator: this.moderator,
         location: this.location,
         type: this.type,
@@ -240,10 +254,7 @@ function Meeting(group, members, type, moderator, description, location) {
         showVisualization: this.showVisualization
     };
 
-    this.writeLog(JSON.stringify(initialData)).done(function() {
-        this.syncLogFile(false);
-    }.bind(this));
-
+    this.writeLog(JSON.stringify(initialData)).then(this.syncLogFile(false))
 }
 
 /**
@@ -289,12 +300,15 @@ mainPage = new Page("main",
         // Setting the group id in the settings page to "explore" will cause the app to 
         //  go into the explore mode, where it just finds badges around it
         //
-        var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
-        app.exploreMode = (app.exploreEnabled && (groupId === "EXPLORE")) || FREE_MEET
+
+  
+        app.exploreMode = true //(app.exploreEnabled && (groupId === "EXPLORE")) || FREE_MEET
 
         
         $(".clear-scan-button").click(function() {
-            app.clearScannedBadges();
+            app.isNewHub = false          
+            app.refreshGroupData();
+            app.synchronizeIncompleteLogFiles();
             mainPage.displayActiveBadges();
         });
         $("#settings-button").click(function() {
@@ -325,22 +339,21 @@ mainPage = new Page("main",
                 return;
                 
             }
-            if (activeMembers < 2) {
+            if (activeMembers < 2 && !app.is_god) {
                 navigator.notification.alert("Need at least 2 people present to start a meeting.");
                 return;
             }
             app.showPage(meetingConfigPage);
         });
         $(".error-retry").click(function() {
-            app.refreshGroupData();
         });
     },
     function onShow() {
         // 
         // each time the main page showes, we update wether or not we are on exploremode
         //
-        var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
-        app.exploreMode = (app.exploreEnabled && (groupId === "EXPLORE")) || FREE_MEET;
+       // var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
+        app.exploreMode = true// (app.exploreEnabled && (groupId === "EXPLORE")) || FREE_MEET;
         if (FREE_MEET) {
             $(".explore").addClass("hidden");
             $(".standard").addClass("hidden");
@@ -360,7 +373,7 @@ mainPage = new Page("main",
         app.clearScannedBadges();
         if (app.bluetoothInitialized) {
             // after bluetooth is disabled, it's automatically re-enabled.
-            this.beginRefreshData();
+            //this.beginRefreshData();
             app.disableBluetooth();
         }
     },
@@ -406,11 +419,11 @@ mainPage = new Page("main",
             app.refreshGroupData(! app.group);
         },
         beginRefreshData: function() {
-            $(".devicelistMode").addClass("hidden");
-            $("#devicelistLoader").removeClass("hidden");
+            //$(".devicelistMode").addClass("hidden");
+            //$("#devicelistLoader").removeClass("hidden");
         },
         createGroupUserList: function(invalidkey) {
-            $(".devicelistMode").addClass("hidden");
+            //$(".devicelistMode").addClass("hidden");
 
             if (invalidkey) {
                 $("#devicelistServerError").removeClass("hidden");
@@ -445,7 +458,6 @@ mainPage = new Page("main",
         displayActiveBadges: function() {
 
             $(".devicelist .item").removeClass("active ion-battery-half ion-battery-full ion-battery-empty ion-battery-low");
-            $(".devicelist .item .battery-icon").removeClass("red yellow green");
             for (var i = 0; i < app.group.members.length; i++) {
                 var member = app.group.members[i];
                 var $el = $(".devicelist .item[data-device='" + member.badgeId + "']");
@@ -456,11 +468,11 @@ mainPage = new Page("main",
                 // we ad a voltage indicator regardless of the activity state
                 if (member.voltage) {
                     if (member.voltage >= BATTERY_YELLOW_THRESHOLD) {
-                        $el.find(".battery-icon").addClass("green ion-battery-full");
+                        $el.find(".battery-icon").addClass("ion-battery-full");
                     } else if (member.voltage >= BATTERY_RED_THRESHOLD) {
-                        $el.find(".battery-icon").addClass("yellow ion-battery-half");
+                        $el.find(".battery-icon").addClass("ion-battery-half");
                     } else {
-                        $el.find(".battery-icon").addClass("red ion-battery-low");
+                        $el.find(".battery-icon").addClass("ion-battery-low");
                     }
                 }
             }
@@ -468,32 +480,6 @@ mainPage = new Page("main",
 
     }
 );
-
-/**
- * Settings Page that lets you save settings
- * @type {Page}
- */
-settingsPage = new Page("settings",
-    function onInit() {
-        $("#saveButton").click(function() {
-            //
-            //  we want the UPPER Case persion of group ID, because its case insensitive anyways, and 
-            //    the id's are stored on the server as uppercase. convert here for uniformity
-            //
-            var groupKey = $("#groupIdField").val().toUpperCase()
-            localStorage.setItem(LOCALSTORAGE_GROUP_KEY, groupKey); 
-            app.showPage(mainPage);
-            toastr.success("Settings Saved!");
-        });
-    },
-    function onShow() {
-        var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
-        $("#groupIdField").val(groupId);
-    },
-    function onHide() {
-    }
-);
-
 
 /**
  * Meeting Config Page that sets up the meeting before it starts
@@ -548,42 +534,35 @@ meetingPage = new Page("meeting",
         $('#add-rem-member-button').click(function() {
           app.scanForBadges()  
         })
-        $('#play-pause-button').click(function() {
-          
-          app.meetingPaused = !app.meetingPaused
-          if (app.meetingPaused) {
-            app.meeting.logPause(true);
-            $("#visualization").addClass("hidden")
-            $("#pause_info").removeClass("hidden")
-            $("#count-down").count_down()
-            
-            
-            $('#play-pause-button').removeClass("ion-ios-pause")
-            $('#play-pause-button').addClass("ion-ios-play")
-
-            //app.stopAllDeviceRecording()
-            app.meetingPauseTimeout = setTimeout(function() {
-              $("#pause_info").addClass("hidden")
+        
+        $('.resume-button').click(function() {
+          app.meeting.pause_countdown.end()
+          app.meeting.pause_countdown = null
+        });
+  
+        function return_from_break() {
               app.meeting.logPause(false);
-              $("#visualization").removeClass("hidden")
-              $('#play-pause-button').removeClass("ion-ios-play")
-              $('#play-pause-button').addClass("ion-ios-pause")
-              //app.startAllDeviceRecording()
-              app.meetingPaused = !app.meetingPaused
-            }, 1000*60 * 10)
-            
-            
-          } else {
-            app.meeting.logPause(false);
-            $("#pause_info").addClass("hidden")
-            $('#play-pause-button').removeClass("ion-ios-play")
-            $('#play-pause-button').addClass("ion-ios-pause")
-            $("#visualization").removeClass("hidden")
-
-            clearTimeout(app.meetingPauseTimeout)
-            //app.startAllDeviceRecording()
-          }
+              $('.hide-when-paused').removeClass('hidden')
+              $('.show-when-paused').addClass('hidden')
+        }
+        
+        $('#add-5-button').click(function() {
+          app.meeting.pause_countdown.extendClock(5*60)
         })
+        
+        $('#add-15-button').click(function() {
+          app.meeting.pause_countdown.extendClock(15*60)
+        })
+  
+        $('#pause-button').click(function() {
+            app.meeting.logPause(true);
+            
+            $('.hide-when-paused').addClass('hidden')
+            $('.show-when-paused').removeClass('hidden')
+              
+            var initial_time = 10 * 60 * 1000;
+            app.meeting.pause_countdown = new Countdown('break-countdown', initial_time, return_from_break)
+      })
 
     },
     function onShow() {
@@ -617,6 +596,7 @@ meetingPage = new Page("meeting",
         this.timedOut = false;
 
         clearInterval(this.syncTimeout);
+  
         this.syncTimeout = setInterval(function() {
             app.meeting.syncLogFile();
         }, LOG_SYNC_INTERVAL);
@@ -658,14 +638,11 @@ meetingPage = new Page("meeting",
     },
     {
         confirmBeforeHide: function() {
-            if (app.exploreMode) {
-                this.onMeetingComplete();
-                return true;
-            }
             
             navigator.notification.confirm("Are you sure?", function(result) {
                 if (result == 1) {
                     this.onMeetingComplete();
+                    app.meeting = null
                 }
             }.bind(this));
             
@@ -757,6 +734,10 @@ meetingPage = new Page("meeting",
 
         },
         onMeetingComplete: function() {
+            if (app.meeting.pause_countdown) {
+              app.meeting.pause_countdown.end()
+              app.meeting.pause_countdown = null
+            }
             app.showPage(mainPage);
         },
         updateCharts: function() {
@@ -814,17 +795,17 @@ meetingPage = new Page("meeting",
         },
         displayVoltageLevels: function() {
 
-            $("#meetingmemberlist-content .item .battery-icon").removeClass("red yellow green ion-battery-empty ion-battery-half ion-battery-low ion-battery-full");
+            $("#meetingmemberlist-content .item .battery-icon").removeClass("ion-battery-empty ion-battery-half ion-battery-low ion-battery-full");
             for (var i = 0; i < app.meeting.members.length; i++) {
                 var member = app.meeting.members[i];
                 var $el = $("#meetingmemberlist-content .item[data-device='" + member.badgeId + "']");
                 if (member.voltage) {
                     if (member.voltage >= BATTERY_YELLOW_THRESHOLD) {
-                        $el.find(".battery-icon").addClass("green ion-battery-full");
+                        $el.find(".battery-icon").addClass("ion-battery-full");
                     } else if (member.voltage >= BATTERY_RED_THRESHOLD) {
-                        $el.find(".battery-icon").addClass("yellow ion-battery-half");
+                        $el.find(".battery-icon").addClass("ion-battery-half");
                     } else {
-                        $el.find(".battery-icon").addClass("red ion-battery-low");
+                        $el.find(".battery-icon").addClass("ion-battery-low");
                     }
                 }
             }
@@ -940,6 +921,45 @@ app = {
         app.exploreEnabled = DEBUG_MODE_ENABLED || FREE_MEET;
         app.exploreMode = app.exploreEnabled || FREE_MEET;
         
+        var projectJSON = localStorage.getItem(LOCALSTORAGE_PROJECT)
+        if (projectJSON) {
+          try {
+            app.project = JSON.parse(projectJSON)
+          } catch (e) {
+            app.project = null
+          }
+        }
+      
+        var hub =  localStorage.getItem("HubName")
+        if (hub) {
+            $("#device-uuid").text(hub)
+        }
+      
+        if (!app.project) {
+            console.log("Getting project info. My project is:", app.project)
+            $("#device-uuid").text("My UUID:" + device.uuid)
+            $.ajax({
+              url:BASE_URL + "projects",
+              dataType:"json",
+              type:"GET",
+              success: function(result) {
+                console.log("GET /project success:", result);
+                app.project = result;
+                localStorage.setItem(LOCALSTORAGE_PROJECT, JSON.stringify(result))
+              },
+              error: function(error) {
+                console.log("GET /project error:", error)
+                if (error.status == 404) {
+                  app.isNewHub = true;
+                  app.registerAsNewHub()
+                }
+              }
+            });
+          }
+      
+      
+      
+      
         // if we are in explore mode, we will generate an empty group to begin
         //    with, then fill it as we find badges.
         if (app.exploreMode || FREE_MEET) {
@@ -950,6 +970,12 @@ app = {
                                     members:[]
                                    });
         }
+      
+      
+      
+        
+        
+      
         
         this.initBluetooth();
 
@@ -963,6 +989,11 @@ app = {
                 currentFeatherlight.close();
                 return;
             }
+          
+            if (app.activePage == meetingPage) {
+              app.meeting.syncLogFile(true, "manual")
+            }
+          
 
             if (app.activePage == mainPage) {
                 navigator.app.exitApp();
@@ -989,12 +1020,12 @@ app = {
             PAGES[i].onInit();
         }
 
-        var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
-        if (! groupId && !FREE_MEET) {
-            this.showPage(settingsPage);
-        } else {
+        //var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
+        //if (! groupId && !FREE_MEET) {
+        //    this.showPage(settingsPage);
+        //} else {
             this.showPage(mainPage);
-        }
+        //}
 
         document.addEventListener("resume", function onResume() {
             setTimeout(function() {
@@ -1092,6 +1123,20 @@ app = {
         });
     },
 
+    registerAsNewHub: function() {
+      $.ajax({
+              url: BASE_URL + 0 +"/hubs",
+              type:"PUT",
+              dataType:"json",
+              success: function(result) {
+                console.log(result)
+
+              },
+              error: function(error) {
+              }
+          });
+    },
+  
     /**
      * Log file synchronization functions
      */
@@ -1101,40 +1146,60 @@ app = {
         });
     },
     getCompletedMeetings: function(callback) {
-        $.ajax(BASE_URL + "get_finished_meetings/" + app.group.key + "/", {
-            dataType:"json",
-            success: function(result) {
-                if (result.success) {
-                    callback(result.finished_meetings);
+        if (app.project) {
+          console.log("ProjectID is:", app.project.project_id)
+          $.ajax({
+              url: BASE_URL + app.project.id +"/hubs",
+              type:"GET",
+              dataType:"json",
+              success: function(result) {
+                console.log(result)
+                localStorage.setItem("HubName", result.name)
+                $("#device-uuid").text(result.name)
+                app.is_god = result.is_god
+                if (app.is_god) {
+                  $(".god-only").removeClass("hidden")
+                } {
+                  $(".god-only").addClass("hidden")
                 }
-            },
-            error: function() {
-            }
-        });
+                callback(result.meetings);
+
+              },
+              error: function(error) {
+              }
+          });
+        } else {
+          app.refreshGroupData()
+          setTimeout( function() {app.getCompletedMeetings(callback)},
+                  1000)
+        }
 
     },
     synchronizeIncompleteLogFiles: function() {
         if (! app.group || ! app.group.key) {
             return;
         }
-        app.getCompletedMeetings(function(finished_meetings) {
-            var meeting_ids = {};
-            for (var i = 0; i < finished_meetings.length; i++) {
-                meeting_ids[finished_meetings[i]] = true;
-            }
+        app.getCompletedMeetings(function(meetings) {
             app.getLogFiles(function(logfiles) {
                 for (var i = 0; i < logfiles.length; i++) {
                     var logfilename = logfiles[i].name;
-                    if (logfilename.indexOf(app.group.key) == 0 && ! (logfilename.split(".")[0] in meeting_ids)) {
-                        app.syncLogFile(logfilename, true, "sync");
+                    if (logfilename.indexOf(device.uuid) == 0) {
+                        app.syncLogFile(logfilename, true, "sync", null, meetings);
                     }
                 }
             });
         })
     },
-    syncLogFile: function(filename, isComplete, endingMethod, endTime) {
+    syncLogFile: function(filename, isComplete, endingMethod, endTime, meetings) {
+      console.log("Starting to sync")
+      var meeting_uuid = filename.split(".")[0]
+      
+      if (meetings && (meeting_uuid in meetings) && meetings[meeting_uuid].is_complete) return
+      
+      if (isComplete || (meetings && !(meeting_uuid in meetings))) {
+        console.log("PUTiing")
         var fileTransfer = new FileTransfer();
-        var uri = encodeURI(BASE_URL + "log_data/");
+        var uri = encodeURI(BASE_URL + app.project.id + "/meetings");
 
         var fileURL = cordova.file.externalDataDirectory + filename;
 
@@ -1142,24 +1207,59 @@ app = {
         options.fileKey = "file";
         options.fileName = fileURL.substr(fileURL.lastIndexOf('/') + 1);
         options.mimeType = "text/plain";
-        options.headers = {"X-APPKEY": APP_KEY};
-
+        options.headers = {"X-APPKEY": APP_KEY, "X-HUB-UUID": device.uuid};
+        options.httpMethod = "PUT";
+      
         options.params = {
-            isComplete:!!isComplete,
+            is_complete:!!isComplete,
         };
+      
         if (endTime) {
-            options.params.endTime = endTime;
+            options.params.end_time = endTime;
         }
+      
         if (endingMethod) {
-            options.params.endingMethod = endingMethod;
+            options.params.ending_method = endingMethod;
         }
 
 
         fileTransfer.upload(fileURL, uri, function win() {
             console.log("Log backed up successfully!");
-        }, function fail() {
-
+        }, function fail(error) {
+            console.log("log backup error:", error)
         }, options);
+      
+      } else {
+        console.log("Trying to POST")
+        var last_update = meetings[meeting_uuid].last_update
+        var toPost = []
+        window.fileStorage.load(meeting_uuid + ".txt").then( function(log) {
+          log = log.split('\n');
+          var num_chunks = log.length;
+          var i = 1;
+          while (i < num_chunks-1) {
+            var chunkJSON =   log[i] ;
+            chunk = (JSON.parse(chunkJSON))
+            if (chunk.timestamp+chunk.timestamp_ms/1000.0 > last_update) {
+              toPost.push(chunkJSON);
+            }
+           i++;
+          }
+          console.log(toPost)
+          $.ajax(BASE_URL + app.project.id + "/meetings", 
+            {
+              type:'POST',
+              data:{uuid: meeting_uuid, chunks:JSON.stringify(toPost)},
+              success: function(succ) {
+                console.log(succ);
+              },
+              error: function(err) {
+                console.log(err);
+              }
+            });
+          
+        });
+      }
 
     },
 
@@ -1167,41 +1267,23 @@ app = {
      * Functions to refresh the group data from the backend
      */
     refreshGroupData: function(showLoading, callback) {
-
-        var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
-        if (app.group && groupId && app.group.key.toUpperCase() != groupId.toUpperCase()) {
-            app.group = null;
-            showLoading = true;
-        }
-
-        if (showLoading) {
-            app.onrefreshGroupDataStart();
-        }
-
-        // we exit early here to ensure we dont rewrite our fake group
-        if (app.exploreMode) {          
-            app.onrefreshGroupDataComplete();
-            return;
-        }
-        
-        $.ajax(BASE_URL + "get_group/" + groupId + "/", {
-            dataType:"json",
-            success: function(result) {
-                if (result.success) {
-                    app.group = new Group(result.group);
-                    localStorage.setItem(LOCALSTORAGE_GROUP, JSON.stringify(result.group));
-                    app.onrefreshGroupDataComplete();
-                } else {
-                    app.onrefreshGroupDataComplete(true);
-                }
-                if (callback) {
-                    callback(result);
-                }
-            },
-            error: function() {
-                app.onrefreshGroupDataComplete();
-            }
-        });
+      app.clearScannedBadges()
+      if (!app.isNewHub) {
+            $.ajax({
+              url:BASE_URL + "projects",
+              dataType:"json",
+              type:"GET",
+              success: function(result) {
+                console.log("GET /project success:", result);
+                app.project = result;
+                app.project.id = result.project_id;
+                localStorage.setItem(LOCALSTORAGE_PROJECT, JSON.stringify(result))
+              },
+              error: function(error) {
+                console.log("GET /project error:", error)
+              }
+            });
+      }
 
     },
     onrefreshGroupDataStart: function() {
@@ -1278,17 +1360,27 @@ app = {
         if (app.exploreMode) {
             var newMember;
             if ( FREE_MEET) {      
-              $.get("http://api.randomuser.me/?seed="+activeBadge+"?inc=name,", function(response) {
-                console.log(JSON.stringify(response))
-                var owner = response.results[0].name.first + " " + response.results[0].name.last
-                newMember = new GroupMember({name:owner, key: activeBadge, badge:activeBadge});
+//              $.get("http://api.randomuser.me/?seed="+activeBadge+"?inc=name,", function(response) {
+//                console.log(JSON.stringify(response))
+//                var owner = response.results[0].name.first + " " + response.results[0].name.last
+//                newMember = new GroupMember({name:owner, key: activeBadge, badge:activeBadge});
+//                newMember.active = false;
+//                newMember.voltage = voltage;
+//                app.group.members.push(newMember);
+//                console.log("Discovered", newMember);
+//                $(".devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-empty battery-icon' /></li>".format(newMember)));
+//                mainPage.displayActiveBadges();
+//              })
+              if (activeBadge in app.project.badge_map) {
+                var member = app.project.badge_map[activeBadge]
+                newMember = new GroupMember({name:member.name, key: member.key, badge:activeBadge});
                 newMember.active = false;
                 newMember.voltage = voltage;
                 app.group.members.push(newMember);
                 console.log("Discovered", newMember);
                 $(".devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-empty battery-icon' /></li>".format(newMember)));
                 mainPage.displayActiveBadges();
-              })
+              }
             }
             else {
               newMember = new GroupMember({name:activeBadge, key: activeBadge, badge:activeBadge});
@@ -1591,6 +1683,54 @@ window.fileStorage = {
  * Utility Functions and library initializations
  */
 
+
+function Countdown(id, initial_time, callback) {
+  this.clock = document.getElementById(id);
+  this.minutesSpan = this.clock.querySelector('.minutes');
+  this.secondsSpan = this.clock.querySelector('.seconds');
+  this.endtime = +(new Date()) + initial_time
+
+  this.getTimeRemaining = function() {
+    var t = this.endtime - +(new Date());
+    var seconds = Math.floor((t / 1000) % 60);
+    var minutes = Math.floor((t / 1000 / 60));
+    return {
+      'total': t,
+      'minutes': minutes,
+      'seconds': seconds
+    };
+  }
+
+  this.extendClock = function(seconds) {
+    this.endtime += seconds*1000;
+    console.log("extending by", seconds, "to", this.endtime/1000)
+    this.updateClock();
+  }.bind(this);
+
+  this.end = function() {
+    this.endtime = 0;
+    this.updateClock();
+  }.bind(this);
+
+  
+  this.updateClock = function() {
+    var remaining = this.getTimeRemaining();
+    
+    this.minutesSpan.innerHTML =  remaining.minutes;
+    this.secondsSpan.innerHTML = ('0' + remaining.seconds).slice(-2);
+
+    if (remaining.total <= 0) {
+      clearInterval(this.timeinterval);
+      callback()
+    }
+  }.bind(this);
+
+  this.updateClock();
+  this.timeinterval = setInterval(this.updateClock, 1000);
+}
+
+
+
 function pad(n, width, z) {
     z = z || '0';
     n = n + '';
@@ -1628,35 +1768,7 @@ jQuery.fn.extend({
             setText();
         });
         return this;
-    },
-  count_down: function () {
-        var end = new Date().getTime() + 1000*60*10;
-        $.each(this, function() {
-            var $this = $(this);
-            var clock = this;
-            function setText() {
-                var now = new Date().getTime();
-                var timediff = Math.floor((end-start) / 1000);
-                var hours = Math.floor(timediff / 3600);
-                var minutes = pad(Math.floor(timediff % 3600 / 60), 2);
-                var seconds = pad(Math.floor(timediff % 60), 2);
-                $this.text("{0}:{1}:{2}".format(hours, minutes, seconds));
-            };
-            if (clock.interval) {
-                clearInterval(clock.interval);
-            }
-            clock.interval = setInterval(function() {
-                if (this == null) {
-                    clearInterval(clock.interval);
-                    return;
-                }
-                setText();
-            }.bind(this), 1000);
-            setText();
-        });
-        return this;
-  
-});
+    }})
 
 
 toastr.options = {
@@ -1684,8 +1796,17 @@ if (!String.prototype.format) {
 $.ajaxSetup({
     beforeSend: function(xhr, settings) {
         xhr.setRequestHeader("X-APPKEY", APP_KEY);
+        xhr.setRequestHeader("X-HUB-UUID", device.uuid);
+
     }
 });
+
+//var projectJSON = JSON.parse(localStorage.getItem(LOCALSTORAGE_PROJECT))
+//console.log(JSON.stringify(project))
+//if (project) {
+//  $("#device-uuid").text(project.name)
+//}
+
 
 document.addEventListener('deviceready', function() {app.initialize() }, false);
 
