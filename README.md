@@ -1,6 +1,12 @@
-OpenBadge project
-=================
+# RoundTable App
 
-Welcome to the Open Badge project. For more information, pease visit our [wiki](https://github.com/HumanDynamics/OpenBadge/wiki)
+## Installation Instructions
 
-![Badge](/images/v3_badge.jpg?raw=true "Open Badge")
+To install, run the command
+
+    $ ./init.sh
+
+Then to run the app, run the command
+
+    $ ./run_cordova
+
