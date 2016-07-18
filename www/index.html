@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1,  target-densitydpi=device-dpi" />
+        <meta http-equiv="Content-Security-Policy"
+              content="default-src *;
+               script-src 'self' 'unsafe-inline' 'unsafe-eval'
+                           http://*.firebase.com
+                           http://*.firebaseio.com
+                           https://*.firebaseio.com
+                           ;
+               style-src  'self' 'unsafe-inline'
+                           http://*.firebase.com
+                           http://*.firebaseio.com
+                           https://*.firebaseio.com
+">
+
+        <link rel="stylesheet" type="text/css" href="css/ionic.min.css" />
+        <link rel="stylesheet" type="text/css" href="css/libs/toastr.min.css" />
+        <link rel="stylesheet" type="text/css" href="css/libs/featherlight.css" />
+        <link rel="stylesheet" type="text/css" href="css/index.css" />
+        <title>RoundTable</title>
+    </head>
+    <body>
+        <div id="main" class="page active">
+            <div class="bar bar-header bar-light">
+                <h1 class="title">RoundTable</h1>
+                <a id="settings-button" class="button button-icon icon button-clear standard explore ion-android-settings"></a>
+            </div>
+            <div>
+<!--
+                <div id="devicelistLoader" class="loader-area hidden">
+                    <div class="loader"></div>
+                </div>
+-->
+                <div class="list devicelistMode" id="devicelistContainer">
+                    <div class="item item-divider">
+                        <span id="device-uuid" class="">
+                            Loading Hub...
+                        </span>
+
+                        <a class="clear-scan button button-light button-small standard clear-scan-button">Clear</a>
+                        <a class="clear-scan button button-light button-small explore free hidden clear-scan-button">Refresh</a>
+
+                        <div id="scanning" class="scanning icon ion-refresh hidden"></div>
+                    </div>
+                    <ul id="devicelist" class="devicelist"></ul>
+                </div>
+                <div id="devicelistError" class="error-message hidden devicelistMode">
+                    <div class="icon"><i class="icon ion-ios-thunderstorm"></i></div>
+                    <div class="message">Couldn't call home. Please ensure you're online.</div>
+                    <a class="error-retry">Retry</a>
+                </div>
+                <div id="devicelistServerError" class="error-message hidden devicelistMode">
+                    <div class="icon"><i class="icon ion-alert-circled"></i></div>
+                    <div class="message">Couldn't find your group on the server. Please check your group ID and try again.</div>
+                    <a class="error-retry">Retry</a>
+                </div>
+            </div>
+            <footer>
+                <div class="button-bar cta-button">
+                    <button class="button button-positive standard free startMeetingButton">Create New Meeting</button>
+                    <button class="button button-positive explore hidden startMeetingButton">Inspect Badges</button>
+                </div>
+                
+            </footer>
+        </div>
+        <div id="settings" class="page">
+            <div class="bar bar-header bar-light">
+                <a class="button button-icon icon ion-arrow-left-b back-button"></a>
+                <h1 class="title">Settings</h1>
+            </div>
+            <div class="list settings-options">
+                <label class="item item-input">
+                    <span class="input-label">Group ID</span>
+                    <input class="force-upper" type="text" id="groupIdField">
+                </label>
+            </div>
+            <div class="button-bar cta-button">
+                <button class="button button-positive" id="saveButton">Save</button>
+            </div>
+        </div>
+
+        <div id="meetingConfig" class="page">
+            <div class="bar bar-header bar-calm">
+                <a class="button button-icon icon ion-arrow-left-b back-button"></a>
+                <h1 class="title standard free">Configure New Meeting</h1>
+                <h1 class="title explore hidden">Configure</h1>
+            </div>
+            <div>
+                <div class="list standard free">
+                    <div class="item item-divider">
+                        Meeting with <span id="memberNameList"></span>
+                    </div>
+                    <label class="item item-input item-select">
+                        <span class="input-label">Moderator</span>
+                        <select id="mediatorField"></select>
+                    </label>
+                    <label class="item item-input item-select">
+                        <span class="input-label">Meeting Type</span>
+                        <select id="meetingTypeField">
+                            <option value="study">Study/Homework</option>
+                            <option value="social">Social</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </label>
+                    <label class="item item-input item-select">
+                        <span class="input-label">Location</span>
+                        <select id="meetingLocationField">
+                            <option value="meetingroom">Study room</option>
+                            <option value="classroom">Classroom</option>
+                            <option value="hallwayatrium">Hallway/Atrium</option>
+                            <option value="outdoors">Outdoors</option>
+                            <option value="office">Private office</option>
+                            <option value="apartment">Apartment</option>
+                            <option value="bar">Bar/Restaurant</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </label>
+                    <label class="item item-input">
+                        <span class="input-label">Meeting<br>Description</span>
+                        <textarea type="text" id="meetingDescriptionField"></textarea>
+                    </label>
+                </div>
+            </div>
+            <footer>
+                <div class="button-bar cta-button standard free">
+                    <button class="button button-calm startMeetingConfirmButton">Begin Meeting</button>
+                </div>
+                <div class="button-bar cta-button explore hidden">
+                    <button class="button button-calm startMeetingConfirmButton">Start</button>
+                </div>
+            </footer>
+        </div>
+
+        <div id="meeting" class="page">
+            <div class="bar bar-header bar-balanced standard free">
+                <a id="add-rem-member-button" class="button button-icon icon button-clear ion-person-add"></a>
+                <a id="pause-button" class="button button-icon icon button-clear ion-ios-pause hide-when-paused"></a>
+                <a class="button button-icon icon button-clear ion-ios-play show-when-paused hidden resume-button"></a>
+                <h1 class="title">Meeting</h1>
+                <a id="debug-chart-button" class="button button-icon icon button-clear god-only ion-hammer"></a>
+            </div>
+            <div>
+                <div class="clock-wrapper standard free hide-when-paused">
+                    <div class="clock-title">Meeting Duration</div>
+                    <div class="clock" id="clock"></div>
+                </div>
+              
+                <div id="pause_info" class="hidden show-when-paused">
+                  <div id="meeting-pause-title">Meeting Paused</div>
+                  
+                  <div id="break-countdown">
+                      <span class="minutes"></span>:<span class="seconds"></span>
+                  </div>
+                  
+                  <button class="button button-block button-calm" id="add-5-button">+5:00</button>
+                  <button class="button button-block button-calm" id="add-15-button">+15:00</button>
+                  
+                  <button id="resume-bar" class="button button-energized hidden show-when-paused resume-button">Resume Meeting</button>
+
+                </div>
+              
+                <div id="visualization" class="visualization-wrapper standard free hide-when-paused">
+                    <div id="meeting-mediator" class="meeting-mediator"></div>
+                </div>
+<!--
+                <div id="meetingmemberlist" class="meeting-member-list list list-inset standard free">
+                    <div class="item item-divider standard">
+                            Meeting Members
+                    </div>
+                    <ul id="meetingmemberlist-content" class="standard free"></ul>
+                </div>
+-->
+                <div style="height:500px">
+                </div>
+              
+                <ul id="devicelist-add-rem" class="devicelist"></ul>
+              
+              
+                <div class="standard free">
+                    <div id="debug-charts" class="debug-charts"></div>
+                </div>
+              
+                <div class="explore hidden">
+                    <div id="debug-charts" class="debug-charts explore-chart-container" style="overflow:scroll;"></div>
+                </div>
+                <script type="text/template" id="debug-chart-template">
+                    <div class="debug-chart card explore-chart" data-key="<%= key %>">
+                        <div class="name"><%= name %></div>
+                        <canvas></canvas>
+                        <div class="last_update"></div>
+                    </div>
+                </script>
+            </div>
+            <footer>
+                <div class="button-bar cta-button">
+                    <button class="button button-assertive standard free" id="endMeetingButton">End Meeting</button>
+                </div>
+            </footer>
+        </div>
+
+        <script type="text/javascript" src="js/libs/jquery-1.12.3.min.js"></script>
+        <script type="text/javascript" src="js/libs/underscore-min.js"></script>
+        <script type="text/javascript" src="js/libs/toastr.min.js"></script>
+        <script type="text/javascript" src="js/libs/featherlight.js"></script>
+        <script type="text/javascript" src="js/libs/d3.v3.min.js"></script>
+        <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/localsettings.js"></script>
+        <script type="text/javascript" src="js/DataAnalyzer.js"></script>
+        <script type="text/javascript" src="js/mm.js"></script>
+        <script type="text/javascript" src="js/bundle.js"></script>
+    </body>
+</html>
