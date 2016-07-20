@@ -1,3 +1,6 @@
+platforms/
+plugins/
+
 *.o
 *.scn
 *.py[co]

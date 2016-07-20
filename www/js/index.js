@@ -120,7 +120,7 @@ function Meeting(group, members, type, moderator, description, location) {
     this.moderator = moderator;
     this.description = description;
     this.uuid = device.uuid + "_" + this.startTime.getTime();
-  
+    this.log_serial = 0
     this.linesPosted = 0
   
     this.toPost = []
@@ -148,7 +148,7 @@ function Meeting(group, members, type, moderator, description, location) {
 
         var chunkData = chunk.toDict(member);
 
-        this.writeLog(JSON.stringify(chunkData));
+        this.writeLog(chunkData);
 
     }.bind(this);
   
@@ -174,10 +174,8 @@ function Meeting(group, members, type, moderator, description, location) {
         }
       }
       
-      this.writeLog(JSON.stringify(data))
-      
-      this.printLogFile()
-      
+      this.writeLog(data)
+            
     }.bind(this);
   
   
@@ -190,10 +188,8 @@ function Meeting(group, members, type, moderator, description, location) {
                  member:member.key}
       }
       
-      this.writeLog(JSON.stringify(data))
-      
-      this.printLogFile()
-       
+      this.writeLog(data)
+           
     }.bind(this);
 
 
@@ -201,7 +197,11 @@ function Meeting(group, members, type, moderator, description, location) {
         return this.uuid + ".txt";
     }.bind(this);
 
-    this.writeLog = function(str) {
+    this.writeLog = function(obj) {
+      obj.last_log_time = new Date()/1000
+      obj.last_log_serial = this.log_serial
+      this.log_serial += 1
+      var str = JSON.stringify(obj)
       return window.fileStorage.save(this.getLogName(), str + "\n");
     }.bind(this);
 
@@ -254,7 +254,7 @@ function Meeting(group, members, type, moderator, description, location) {
         showVisualization: this.showVisualization
     };
 
-    this.writeLog(JSON.stringify(initialData)).then(this.syncLogFile(false))
+    this.writeLog(initialData).then(this.syncLogFile(false))
 }
 
 /**
@@ -586,6 +586,17 @@ meetingPage = new Page("meeting",
             $(".explore").addClass("hidden");
             $(".explore-chart-container").css("margin-top", "0px")
         }
+  
+        
+        if (app.is_god) {
+          console.log("We are god")
+          $(".god-only").removeClass("hidden")
+        } else {
+          console.log("We are not god")
+          $(".god-only").addClass("hidden")
+        }
+
+  
         this.createMemberUserList();
 
         window.plugins.insomnia.keepAwake();
@@ -1159,7 +1170,7 @@ app = {
                 app.is_god = result.is_god
                 if (app.is_god) {
                   $(".god-only").removeClass("hidden")
-                } {
+                } else {
                   $(".god-only").addClass("hidden")
                 }
                 callback(result.meetings);
@@ -1209,7 +1220,7 @@ app = {
         options.mimeType = "text/plain";
         options.headers = {"X-APPKEY": APP_KEY, "X-HUB-UUID": device.uuid};
         options.httpMethod = "PUT";
-      
+                
         options.params = {
             is_complete:!!isComplete,
         };
@@ -1231,21 +1242,29 @@ app = {
       
       } else {
         console.log("Trying to POST")
-        var last_update = meetings[meeting_uuid].last_update
+        var last_log_timestamp = meetings[meeting_uuid].last_log_timestamp
+        var last_log_serial = meetings[meeting_uuid].last_log_serial
+
         var toPost = []
         window.fileStorage.load(meeting_uuid + ".txt").then( function(log) {
           log = log.split('\n');
-          var num_chunks = log.length;
-          var i = 1;
-          while (i < num_chunks-1) {
-            var chunkJSON =   log[i] ;
-            chunk = (JSON.parse(chunkJSON))
-            if (chunk.timestamp+chunk.timestamp_ms/1000.0 > last_update) {
-              toPost.push(chunkJSON);
-            }
-           i++;
+          var num_chunks = log.length -1;
+          
+          for (var i = last_log_serial + 1; i < num_chunks; i++) {
+            toPost.push(log[i])
           }
-          console.log(toPost)
+//          while (i < num_chunks) {
+//            var chunkJSON =   log[i] ;
+//            chunk = (JSON.parse(chunkJSON))
+//            if (found_start || chunk.timestamp+chunk.timestamp_ms/1000.0 > last_update) {
+//              toPost.push(chunkJSON);
+//            }
+//           i++;
+//          }
+          
+          console.log("We last posted", last_log_serial, "at, ", last_log_timestamp)
+          console.log("we now post the data:", toPost)
+          
           $.ajax(BASE_URL + app.project.id + "/meetings", 
             {
               type:'POST',
