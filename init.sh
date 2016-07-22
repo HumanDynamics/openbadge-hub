@@ -10,11 +10,14 @@ cd ../../
 npm install -g coffee-script
 npm install -g browserify
 
-cordova plugin add cordova-plugin-bluetoothle
-cordova plugin add https://github.com/katzer/cordova-plugin-background-mode.git
-cordova plugin add https://github.com/EddyVerbruggen/Insomnia-PhoneGap-Plugin.git
-cordova plugin add cordova-plugin-file
-cordova plugin add cordova-plugin-file-transfer
-cordova plugin add cordova-plugin-vibration
 
-cordova plugin add modified_plugins/cordova-plugin-dialogs/ --link
+# These should be installed via cordova build in order to ensure correct versioning.
+
+# cordova plugin add cordova-plugin-bluetoothle
+# cordova plugin add https://github.com/katzer/cordova-plugin-background-mode.git
+# cordova plugin add https://github.com/EddyVerbruggen/Insomnia-PhoneGap-Plugin.git
+# cordova plugin add cordova-plugin-file
+# cordova plugin add cordova-plugin-file-transfer
+# cordova plugin add cordova-plugin-vibration
+
+# cordova plugin add modified_plugins/cordova-plugin-dialogs/ --link
