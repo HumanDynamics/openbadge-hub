@@ -1,5 +1,7 @@
 platforms/
 plugins/
+www/js/node_modules
+.DS_Store
 
 *.o
 *.scn
