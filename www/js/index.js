@@ -55,7 +55,7 @@ VISUALIZATION = true
  * Holds the data of a group, constructed from json data from the server
  */
 function Group(groupJson) {
-    console.log(groupJson)
+    //console.log(groupJson)
     this.name = groupJson.name;
     this.key = groupJson.key;
     this.visualization_ranges = groupJson.visualization_ranges;
@@ -107,7 +107,7 @@ function GroupMember(memberJson) {
 
 /**
  * Meeting Model
- * 
+ *
  * This is in charge of logging all data to the log file
  */
 function Meeting(group, members, type, moderator, description, location) {
@@ -122,9 +122,9 @@ function Meeting(group, members, type, moderator, description, location) {
     this.uuid = device.uuid + "_" + this.startTime.getTime();
     this.log_serial = 0
     this.linesPosted = 0
-  
+
     this.toPost = []
-  
+
     this.showVisualization = function() {
         var now = new Date().getTime() / 1000;
         var ranges = group.visualization_ranges;
@@ -137,8 +137,8 @@ function Meeting(group, members, type, moderator, description, location) {
     }();
 
     var meeting = this;
-  
-  
+
+
     $.each(this.members, function(index, member) {
         member.clearData();
 
@@ -151,13 +151,13 @@ function Meeting(group, members, type, moderator, description, location) {
         this.writeLog(chunkData);
 
     }.bind(this);
-  
-  
+
+
     this.logPause = function(paused) {
       var time = new Date().getTime();
-      
+
       var data;
-      
+
       if (paused) {
         data = {
           event:"break",
@@ -173,23 +173,23 @@ function Meeting(group, members, type, moderator, description, location) {
           end:time
         }
       }
-      
+
       this.writeLog(data)
-            
+
     }.bind(this);
-  
-  
+
+
     this.logMeetingMemberChange = function(member, details) {
-      
+
       var data = {
         event:details,
         timestamp:new Date() / 1000,
         changed:{badge:member.badgeId,
                  member:member.key}
       }
-      
+
       this.writeLog(data)
-           
+
     }.bind(this);
 
 
@@ -222,7 +222,7 @@ function Meeting(group, members, type, moderator, description, location) {
     this.memberKeys = memberIds;
     this.memberInitials = memberInitials;
 
-  
+
     this.updateMeeting = function() {
       var memberIds = [];
       var memberInitials = [];
@@ -297,16 +297,16 @@ PAGES = [];
 mainPage = new Page("main",
     function onInit() {
         //
-        // Setting the group id in the settings page to "explore" will cause the app to 
+        // Setting the group id in the settings page to "explore" will cause the app to
         //  go into the explore mode, where it just finds badges around it
         //
 
-  
+
         app.exploreMode = true //(app.exploreEnabled && (groupId === "EXPLORE")) || FREE_MEET
 
-        
+
         $(".clear-scan-button").click(function() {
-            app.isNewHub = false          
+            app.isNewHub = false
             app.refreshGroupData();
             app.synchronizeIncompleteLogFiles();
             mainPage.displayActiveBadges();
@@ -333,11 +333,11 @@ mainPage = new Page("main",
                     navigator.notification.alert("Choose a badge to inspect.");
                     return;
                 }
-                
+
                 app.meeting = new Meeting(app.group, memberList, "", "", "", "");
                 app.showPage(meetingPage);
                 return;
-                
+
             }
             if (activeMembers < 2 && !app.is_god) {
                 navigator.notification.alert("Need at least 2 people present to start a meeting.");
@@ -349,7 +349,7 @@ mainPage = new Page("main",
         });
     },
     function onShow() {
-        // 
+        //
         // each time the main page showes, we update wether or not we are on exploremode
         //
        // var groupId = localStorage.getItem(LOCALSTORAGE_GROUP_KEY);
@@ -442,7 +442,7 @@ mainPage = new Page("main",
                 console.log("Couldnt find any members in ", app.group)
                 return;
             }
-            
+
             for (var i = 0; i < app.group.members.length; i++) {
                 var member = app.group.members[i];
                 // we dont bother with this in explore mode, becuase we dont have
@@ -532,41 +532,41 @@ meetingPage = new Page("meeting",
         $('#debug-chart-button').featherlight(this.$debugCharts, {persist:true});
         $('#add-rem-member-button').featherlight($("#devicelist-add-rem"));
         $('#add-rem-member-button').click(function() {
-          app.scanForBadges()  
+          app.scanForBadges()
         })
-        
+
         $('.resume-button').click(function() {
           app.meeting.pause_countdown.end()
           app.meeting.pause_countdown = null
         });
-  
+
         function return_from_break() {
               app.meeting.logPause(false);
               $('.hide-when-paused').removeClass('hidden')
               $('.show-when-paused').addClass('hidden')
         }
-        
+
         $('#add-5-button').click(function() {
           app.meeting.pause_countdown.extendClock(5*60)
         })
-        
+
         $('#add-15-button').click(function() {
           app.meeting.pause_countdown.extendClock(15*60)
         })
-  
+
         $('#pause-button').click(function() {
             app.meeting.logPause(true);
-            
+
             $('.hide-when-paused').addClass('hidden')
             $('.show-when-paused').removeClass('hidden')
-              
+
             var initial_time = 10 * 60 * 1000;
             app.meeting.pause_countdown = new Countdown('break-countdown', initial_time, return_from_break)
       })
 
     },
     function onShow() {
-        // 
+        //
         // each time the main page showes, we update weather or not we are on exploremode
         //
         if (FREE_MEET) {
@@ -586,8 +586,8 @@ meetingPage = new Page("meeting",
             $(".explore").addClass("hidden");
             $(".explore-chart-container").css("margin-top", "0px")
         }
-  
-        
+
+
         if (app.is_god) {
           console.log("We are god")
           $(".god-only").removeClass("hidden")
@@ -596,7 +596,7 @@ meetingPage = new Page("meeting",
           $(".god-only").addClass("hidden")
         }
 
-  
+
         this.createMemberUserList();
 
         window.plugins.insomnia.keepAwake();
@@ -607,7 +607,7 @@ meetingPage = new Page("meeting",
         this.timedOut = false;
 
         clearInterval(this.syncTimeout);
-  
+
         this.syncTimeout = setInterval(function() {
             app.meeting.syncLogFile();
         }, LOG_SYNC_INTERVAL);
@@ -627,8 +627,8 @@ meetingPage = new Page("meeting",
 
         this.initCharts();
         this.setMeetingTimeout();
-  
-  
+
+
         for (var i = 0; i < app.meeting.members.length; i++) {
           app.meeting.logMeetingMemberChange(app.meeting.members[i], "member_added")
         }
@@ -649,14 +649,14 @@ meetingPage = new Page("meeting",
     },
     {
         confirmBeforeHide: function() {
-            
+
             navigator.notification.confirm("Are you sure?", function(result) {
                 if (result == 1) {
                     this.onMeetingComplete();
                     app.meeting = null
                 }
             }.bind(this));
-            
+
             return true;
         },
         onBluetoothInit: function() {
@@ -677,7 +677,7 @@ meetingPage = new Page("meeting",
                 app.showMainPage();
             }.bind(this), CHECK_MEETING_LENGTH_REACTION_TIME);
         },
-        setMeetingTimeout: function() { 
+        setMeetingTimeout: function() {
 
             this.clearMeetingTimeout();
 
@@ -760,10 +760,10 @@ meetingPage = new Page("meeting",
 
             var end = new Date().getTime();
             var start = end - DEBUG_CHART_WINDOW;
-            
-            // calculate intervals 
+
+            // calculate intervals
             var intervals = GroupDataAnalyzer(app.meeting.members,start,end);
-            
+
             // update the chart
             $.each(app.meeting.members, function(index, member) {
                 // update cutoff and threshold
@@ -836,7 +836,7 @@ function DebugChart($canvas) {
     var context = canvas.getContext('2d');
 
     var magnitude = 100;
-    
+
     var margin = 5;
     var height = canvas.height - margin * 2;
     var width = canvas.width - margin * 2;
@@ -864,9 +864,9 @@ function DebugChart($canvas) {
         context.lineWidth = 2;
         context.beginPath();
         for (var i = 0; i < series.length - 1; i++) {
-            
+
             var point = series[i];
-            
+
             var y = calcY(point.volClippedSmooth);
             var x = calcX(point.timestamp, start, end);
             if (i == 0) {
@@ -908,9 +908,9 @@ function DebugChart($canvas) {
 
 /**
  * App is the main brain behind the core functioning of the app.
- * The app should be the place to do the following operations. Do not have such operations in any other class, 
+ * The app should be the place to do the following operations. Do not have such operations in any other class,
  * and do not have any other operations in app. They belong elsewhere!
- * 
+ *
  * + App and Cordova Initializations
  * + Page Navigation
  * + Bluetooth Operations
@@ -927,11 +927,11 @@ app = {
         //   SLOANers possibly guessing to type "EXPLORE" into the groupID field
         //   and getting access to our debug mode
         //
-      
+
         app.exploreEnabled = DEBUG_MODE_ENABLED || FREE_MEET;
         app.exploreEnabled = DEBUG_MODE_ENABLED || FREE_MEET;
         app.exploreMode = app.exploreEnabled || FREE_MEET;
-        
+
         var projectJSON = localStorage.getItem(LOCALSTORAGE_PROJECT)
         if (projectJSON) {
           try {
@@ -940,12 +940,12 @@ app = {
             app.project = null
           }
         }
-      
+
         var hub =  localStorage.getItem("HubName")
         if (hub) {
             $("#device-uuid").text(hub)
         }
-      
+
         if (!app.project) {
             console.log("Getting project info. My project is:", app.project)
             $("#device-uuid").text("My UUID:" + device.uuid)
@@ -956,6 +956,7 @@ app = {
               success: function(result) {
                 console.log("GET /project success:", result);
                 app.project = result;
+                app.project.id = result.project_id
                 localStorage.setItem(LOCALSTORAGE_PROJECT, JSON.stringify(result))
               },
               error: function(error) {
@@ -964,30 +965,31 @@ app = {
                   app.isNewHub = true;
                   app.registerAsNewHub()
                 }
+
               }
             });
           }
-      
-      
-      
-      
+
+
+
+
         // if we are in explore mode, we will generate an empty group to begin
         //    with, then fill it as we find badges.
         if (app.exploreMode || FREE_MEET) {
-            app.group = new Group({name:"Explored Group", 
-                                    key:"Explore", 
-                                    visualization_ranges:[{start:0, 
+            app.group = new Group({name:"Explored Group",
+                                    key:"Explore",
+                                    visualization_ranges:[{start:0,
                                                           end:Infinity}],
                                     members:[]
                                    });
         }
-      
-      
-      
-        
-        
-      
-        
+
+
+
+
+
+
+
         this.initBluetooth();
 
         cordova.plugins.backgroundMode.setDefaults({title:'OpenBadge Meeting', text:'OpenBadge Meeting in Progress'});
@@ -1000,11 +1002,11 @@ app = {
                 currentFeatherlight.close();
                 return;
             }
-          
+
             if (app.activePage == meetingPage) {
               app.meeting.syncLogFile(true, "manual")
             }
-          
+
 
             if (app.activePage == mainPage) {
                 navigator.app.exitApp();
@@ -1147,7 +1149,7 @@ app = {
               }
           });
     },
-  
+
     /**
      * Log file synchronization functions
      */
@@ -1180,9 +1182,13 @@ app = {
               }
           });
         } else {
-          app.refreshGroupData()
-          setTimeout( function() {app.getCompletedMeetings(callback)},
-                  1000)
+          console.log("No project data available, calling server")
+          app.refreshGroupData(false, function()
+          {
+              console.log("Got project data, ", app.project)
+              app.getCompletedMeetings(callback)
+          },
+          1000)
         }
 
     },
@@ -1204,9 +1210,9 @@ app = {
     syncLogFile: function(filename, isComplete, endingMethod, endTime, meetings) {
       console.log("Starting to sync")
       var meeting_uuid = filename.split(".")[0]
-      
+
       if (meetings && (meeting_uuid in meetings) && meetings[meeting_uuid].is_complete) return
-      
+
       if (isComplete || (meetings && !(meeting_uuid in meetings))) {
         console.log("PUTiing")
         var fileTransfer = new FileTransfer();
@@ -1220,15 +1226,15 @@ app = {
         options.mimeType = "text/plain";
         options.headers = {"X-APPKEY": APP_KEY, "X-HUB-UUID": device.uuid};
         options.httpMethod = "PUT";
-                
+
         options.params = {
             is_complete:!!isComplete,
         };
-      
+
         if (endTime) {
             options.params.end_time = endTime;
         }
-      
+
         if (endingMethod) {
             options.params.ending_method = endingMethod;
         }
@@ -1239,7 +1245,7 @@ app = {
         }, function fail(error) {
             console.log("log backup error:", error)
         }, options);
-      
+
       } else {
         console.log("Trying to POST")
         var last_log_timestamp = meetings[meeting_uuid].last_log_timestamp
@@ -1249,7 +1255,7 @@ app = {
         window.fileStorage.load(meeting_uuid + ".txt").then( function(log) {
           log = log.split('\n');
           var num_chunks = log.length -1;
-          
+
           for (var i = last_log_serial + 1; i < num_chunks; i++) {
             toPost.push(log[i])
           }
@@ -1261,11 +1267,11 @@ app = {
 //            }
 //           i++;
 //          }
-          
+
           console.log("We last posted", last_log_serial, "at, ", last_log_timestamp)
           console.log("we now post the data:", toPost)
-          
-          $.ajax(BASE_URL + app.project.id + "/meetings", 
+
+          $.ajax(BASE_URL + app.project.id + "/meetings",
             {
               type:'POST',
               data:{uuid: meeting_uuid, chunks:JSON.stringify(toPost)},
@@ -1276,7 +1282,7 @@ app = {
                 console.log(err);
               }
             });
-          
+
         });
       }
 
@@ -1373,12 +1379,12 @@ app = {
                 return;
             }
         }
-        
+
         // normally we wouldnt do anything if the found MAC didnt match a MAC in the group,
         //   but in explore mode we will simply add that MAC to our `fake` group
         if (app.exploreMode) {
             var newMember;
-            if ( FREE_MEET) {      
+            if ( FREE_MEET) {
 //              $.get("http://api.randomuser.me/?seed="+activeBadge+"?inc=name,", function(response) {
 //                console.log(JSON.stringify(response))
 //                var owner = response.results[0].name.first + " " + response.results[0].name.last
@@ -1390,7 +1396,7 @@ app = {
 //                $(".devicelist").append($("<li onclick='app.toggleActiveUser(\"{key}\")' class=\"item\" data-name='{name}' data-device='{badgeId}' data-key='{key}'><span class='name'>{name}</span><i class='icon ion-battery-empty battery-icon' /></li>".format(newMember)));
 //                mainPage.displayActiveBadges();
 //              })
-              if (activeBadge in app.project.badge_map) {
+              if (app.project && activeBadge in app.project.badge_map) {
                 var member = app.project.badge_map[activeBadge]
                 newMember = new GroupMember({name:member.name, key: member.key, badge:activeBadge});
                 newMember.active = false;
@@ -1411,7 +1417,7 @@ app = {
               mainPage.displayActiveBadges();
           }
       }
-          
+
     },
     stopScan: function scanStopped() {
         app.scanning = false;
@@ -1457,24 +1463,24 @@ app = {
                   app.meeting.updateMeeting()
                   console.log("initing charts with ", app.meeting.members)
                   meetingPage.initCharts()
-                } 
+                }
                 mainPage.displayActiveBadges();
                 return;
             }
-            
+
         }
-        
+
     },
     clearScannedBadges: function() {
         //
         // in exploreMode, rather than clearing weather or not we have seen
-        //  a particular badge, we forget all the badges and allow us to 
+        //  a particular badge, we forget all the badges and allow us to
         //  see what badges are near us again
         //
         if (app.exploreMode) {
-            app.group = new Group({name:"Explored Group", 
-                                    key:"Explore", 
-                                    visualization_ranges:[{start:0, 
+            app.group = new Group({name:"Explored Group",
+                                    key:"Explore",
+                                    visualization_ranges:[{start:0,
                                                           end:Infinity}],
                                     members:[]
                                    });
@@ -1731,10 +1737,10 @@ function Countdown(id, initial_time, callback) {
     this.updateClock();
   }.bind(this);
 
-  
+
   this.updateClock = function() {
     var remaining = this.getTimeRemaining();
-    
+
     this.minutesSpan.innerHTML =  remaining.minutes;
     this.secondsSpan.innerHTML = ('0' + remaining.seconds).slice(-2);
 
@@ -1812,13 +1818,6 @@ if (!String.prototype.format) {
     }
 }
 
-$.ajaxSetup({
-    beforeSend: function(xhr, settings) {
-        xhr.setRequestHeader("X-APPKEY", APP_KEY);
-        xhr.setRequestHeader("X-HUB-UUID", device.uuid);
-
-    }
-});
 
 //var projectJSON = JSON.parse(localStorage.getItem(LOCALSTORAGE_PROJECT))
 //console.log(JSON.stringify(project))
@@ -1827,5 +1826,16 @@ $.ajaxSetup({
 //}
 
 
-document.addEventListener('deviceready', function() {app.initialize() }, false);
+document.addEventListener('deviceready', function() {
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            xhr.setRequestHeader("X-APPKEY", APP_KEY);
+            xhr.setRequestHeader("X-HUB-UUID", device.uuid);
+
+        }
+    });
+
+
+    app.initialize() },
+ false);
 
