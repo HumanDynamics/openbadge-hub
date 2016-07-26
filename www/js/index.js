@@ -970,9 +970,6 @@ app = {
             });
           }
 
-
-
-
         // if we are in explore mode, we will generate an empty group to begin
         //    with, then fill it as we find badges.
         if (app.exploreMode || FREE_MEET) {
@@ -983,12 +980,6 @@ app = {
                                     members:[]
                                    });
         }
-
-
-
-
-
-
 
         this.initBluetooth();
 
@@ -1042,7 +1033,9 @@ app = {
 
         document.addEventListener("resume", function onResume() {
             setTimeout(function() {
-                app.synchronizeIncompleteLogFiles();
+                if (!app.meeting) {
+                  app.synchronizeIncompleteLogFiles();
+                }
             }, 100);
             app.activePage.onResume();
         }, false);
@@ -1089,7 +1082,7 @@ app = {
                     app.activePage.onBluetoothInit();
                 },
                 function(obj) {
-                    console.log('permissions err');
+                    //console.log('permissions err');
                     app.ensureBluetoothEnabled();
                     app.bluetoothInitialized = true;
                     app.activePage.onBluetoothInit();
