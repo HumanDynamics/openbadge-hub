@@ -370,7 +370,12 @@ mainPage = new Page("main",
             $(".explore").addClass("hidden");
             $(".explore-chart-container").css("margin-top", "0px")
         }
+        app.meeting = null
         app.clearScannedBadges();
+        setTimeout( function () {
+          app.synchronizeIncompleteLogFiles()
+        }, 5000)
+        
         if (app.bluetoothInitialized) {
             // after bluetooth is disabled, it's automatically re-enabled.
             //this.beginRefreshData();
@@ -653,7 +658,6 @@ meetingPage = new Page("meeting",
             navigator.notification.confirm("Are you sure?", function(result) {
                 if (result == 1) {
                     this.onMeetingComplete();
-                    app.meeting = null
                 }
             }.bind(this));
 
@@ -1033,15 +1037,13 @@ app = {
 
         document.addEventListener("resume", function onResume() {
             setTimeout(function() {
-                if (!app.meeting) {
-                  app.synchronizeIncompleteLogFiles();
-                }
+                app.synchronizeIncompleteLogFiles();
             }, 100);
             app.activePage.onResume();
         }, false);
         setTimeout(function() {
             app.synchronizeIncompleteLogFiles();
-        }, 100);
+        }, 1000);
 
 
         document.addEventListener("pause", function onPause() {
@@ -1155,7 +1157,7 @@ app = {
         if (app.project) {
           console.log("ProjectID is:", app.project.project_id)
           $.ajax({
-              url: BASE_URL + app.project.id +"/hubs",
+              url: BASE_URL + app.project.key +"/hubs",
               type:"GET",
               dataType:"json",
               success: function(result) {
@@ -1194,7 +1196,9 @@ app = {
                 for (var i = 0; i < logfiles.length; i++) {
                     var logfilename = logfiles[i].name;
                     if (logfilename.indexOf(device.uuid) == 0) {
+                      if (!app.meeting || app.meeting.getLogName() != logfilename) {
                         app.syncLogFile(logfilename, true, "sync", null, meetings);
+                      }
                     }
                 }
             });
@@ -1206,10 +1210,13 @@ app = {
 
       if (meetings && (meeting_uuid in meetings) && meetings[meeting_uuid].is_complete) return
 
-      if (isComplete || (meetings && !(meeting_uuid in meetings))) {
+      if ( app.force_put || isComplete || (meetings && !(meeting_uuid in meetings))) {
+        if (app.force_put) {
+          app.force_put = false
+        }
         console.log("PUTiing")
         var fileTransfer = new FileTransfer();
-        var uri = encodeURI(BASE_URL + app.project.id + "/meetings");
+        var uri = encodeURI(BASE_URL + app.project.key + "/meetings");
 
         var fileURL = cordova.file.externalDataDirectory + filename;
 
@@ -1247,10 +1254,10 @@ app = {
         var toPost = []
         window.fileStorage.load(meeting_uuid + ".txt").then( function(log) {
           log = log.split('\n');
-          var num_chunks = log.length -1;
+          var num_chunks = log.length - 1;
 
           for (var i = last_log_serial + 1; i < num_chunks; i++) {
-            toPost.push(log[i])
+            toPost.push(log[i] + '\n')
           }
 //          while (i < num_chunks) {
 //            var chunkJSON =   log[i] ;
@@ -1264,14 +1271,21 @@ app = {
           console.log("We last posted", last_log_serial, "at, ", last_log_timestamp)
           console.log("we now post the data:", toPost)
 
-          $.ajax(BASE_URL + app.project.id + "/meetings",
+          $.ajax(BASE_URL + app.project.key + "/meetings",
             {
               type:'POST',
               data:{uuid: meeting_uuid, chunks:JSON.stringify(toPost)},
               success: function(succ) {
+                if (succ.status == "log mismatch") {
+                  app.force_put = true
+                  console.log("forcing a put")
+                }
+                app.force_put = false
                 console.log(succ);
               },
               error: function(err) {
+                console.log("forcing a put")
+                app.force_put = true
                 console.log(err);
               }
             });
