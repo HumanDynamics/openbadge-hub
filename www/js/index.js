@@ -166,11 +166,11 @@ function Meeting(group, members, type, moderator, description, location) {
         return this.uuid + ".txt";
     }.bind(this);
 
-    this.writeLog = function(event, data) {
-      var log_obj = { 'event':event,
+    this.writeLog = function(type, data) {
+      var log_obj = { 'type':type,
               'log_timestamp':new Date()/1000,
                   'log_index':this.log_index,
-                    'meeting':this.uuid,
+                        'hub':device.uuid,
                        'data':data }
       this.log_index += 1
       var str = JSON.stringify(log_obj) + '\n'
@@ -213,13 +213,23 @@ function Meeting(group, members, type, moderator, description, location) {
       }.bind(this))
     }.bind(this);
 
+
+
     this.initializeMeeting = function() {
-        return this.writeLog("meeting started", {
+        var split = new Date().toString().split(" ");
+        var timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
+
+        console.log("initializing meeting")
+
+        this.writeLog("meeting started", {
             'uuid': this.uuid,
             'start_time':new Date()/1000,
             'log_version':"2.0"
-        }).then(this.syncLogFile(false))
-    }
+        }).then(this.writeLog("hub joined", {
+                "uuid":device.uuid,
+                "locale":timeZoneFormatted
+        }))
+    }.bind(this);
 
     this.initializeMeeting()
 
