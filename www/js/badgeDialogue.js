@@ -29,7 +29,7 @@ function Chunk() {
      * @return the voltage of the chunk
      */
     this.getVoltage = function() {
-        return this.voltage;                                                                                
+        return this.voltage;
     }.bind(this);
 
     /*
@@ -89,16 +89,15 @@ function Chunk() {
     this.toDict = function (member) {
         return {
             voltage:this.voltage,
-            timestamp:this.ts,
-            timestamp_ms:this.ts_ms,
-            sampleDelay:this.sampleDelay,
-            numSamples:this.numSamples,
+            timestamp:this.ts + this.ts_ms/1000.0,
+            sample_period:this.sampleDelay,
+            num_samples:this.numSamples,
             samples:this.samples,
-            badge: member.badgeId,
+            badge_address: member.badgeId,
             member: member.key
     };
     }.bind(this);
-    
+
     this.isFull = function() {
         return this.samples.length >= 114;
     }.bind(this);

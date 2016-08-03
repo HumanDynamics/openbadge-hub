@@ -120,76 +120,45 @@ function Meeting(group, members, type, moderator, description, location) {
     this.moderator = moderator;
     this.description = description;
     this.uuid = device.uuid + "_" + this.startTime.getTime();
-    this.log_serial = 0
-    this.linesPosted = 0
+    this.log_index = 0
 
     this.toPost = []
 
-    this.showVisualization = function() {
-        var now = new Date().getTime() / 1000;
-        var ranges = group.visualization_ranges;
-        for (var i = 0; i < ranges.length; i++) {
-            if (now >= ranges[i].start && now <= ranges[i].end) {
-                return true;
-            }
-        }
-        return false;
-    }();
+    this.showVisualization = function() { return true }();
 
     var meeting = this;
 
 
     $.each(this.members, function(index, member) {
         member.clearData();
-
     }.bind(this));
 
     this.logChunk = function(chunk, member) {
 
-        var chunkData = chunk.toDict(member);
-
-        this.writeLog(chunkData);
-
-    }.bind(this);
-
-
-    this.logPause = function(paused) {
-      var time = new Date().getTime();
-
-      var data;
-
-      if (paused) {
-        data = {
-          event:"break",
-          timestamp:new Date() / 1000,
-          details:"break_started",
-          start:time
-        }
-      } else {
-        data = {
-          event:"break",
-          timestamp:new Date() / 1000,
-          details:"break_ended",
-          end:time
-        }
-      }
-
-      this.writeLog(data)
+        var chunk_data = chunk.toDict(member);
+        this.writeLog("audio received", chunk_data);
 
     }.bind(this);
 
 
-    this.logMeetingMemberChange = function(member, details) {
+    this.logPauseStart = function() {
+        this.writeLog("pause started", null)
+    }.bind(this);
 
-      var data = {
-        event:details,
-        timestamp:new Date() / 1000,
-        changed:{badge:member.badgeId,
-                 member:member.key}
-      }
+    this.logPauseEnd = function(cause, remaining) {
+        this.writeLog("pause ended", {'resume_cause':cause,
+                                 'seconds_remaining':remaining})
+    }.bind(this);
 
-      this.writeLog(data)
 
+    this.logMeetingMemberAdd = function(member) {
+      this.writeLog("member changed", {'member_key':member.key,
+                                          "change":"join"})
+    }.bind(this);
+
+    this.logMeetingMemberRemove = function(member) {
+        this.writeLog("member changed", {'member_key':member.key,
+                                            "change":"leave"})
     }.bind(this);
 
 
@@ -197,12 +166,15 @@ function Meeting(group, members, type, moderator, description, location) {
         return this.uuid + ".txt";
     }.bind(this);
 
-    this.writeLog = function(obj) {
-      obj.last_log_time = new Date()/1000
-      obj.last_log_serial = this.log_serial
-      this.log_serial += 1
-      var str = JSON.stringify(obj)
-      return window.fileStorage.save(this.getLogName(), str + "\n");
+    this.writeLog = function(event, data) {
+      var log_obj = { 'event':event,
+              'log_timestamp':new Date()/1000,
+                  'log_index':this.log_index,
+                    'meeting':this.uuid,
+                       'data':data }
+      this.log_index += 1
+      var str = JSON.stringify(log_obj) + '\n'
+      return window.fileStorage.save(this.getLogName(), str);
     }.bind(this);
 
 
@@ -241,20 +213,16 @@ function Meeting(group, members, type, moderator, description, location) {
       }.bind(this))
     }.bind(this);
 
-    var initialData = {
-        uuid: this.uuid,
-        group: this.group.key,
-        members: memberIds,
-        start_time: this.startTime.toJSON(),
-        timestamp: this.timestamp,
-        moderator: this.moderator,
-        location: this.location,
-        type: this.type,
-        description: this.description.replace(/\s\s+/g, ' '),
-        showVisualization: this.showVisualization
-    };
+    this.initializeMeeting = function() {
+        return this.writeLog("meeting started", {
+            'uuid': this.uuid,
+            'start_time':new Date()/1000,
+            'log_version':"2.0"
+        }).then(this.syncLogFile(false))
+    }
 
-    this.writeLog(initialData).then(this.syncLogFile(false))
+    this.initializeMeeting()
+
 }
 
 /**
@@ -375,7 +343,7 @@ mainPage = new Page("main",
         setTimeout( function () {
           app.synchronizeIncompleteLogFiles()
         }, 5000)
-        
+
         if (app.bluetoothInitialized) {
             // after bluetooth is disabled, it's automatically re-enabled.
             //this.beginRefreshData();
@@ -545,8 +513,13 @@ meetingPage = new Page("meeting",
           app.meeting.pause_countdown = null
         });
 
-        function return_from_break() {
-              app.meeting.logPause(false);
+        function return_from_break(manual_end, remaining) {
+              if (manual_end) {
+                  app.meeting.logPauseEnd("manual", remaining);
+              } else {
+                  app.meeting.logPauseEnd("timer", 0);
+              }
+
               $('.hide-when-paused').removeClass('hidden')
               $('.show-when-paused').addClass('hidden')
         }
@@ -560,7 +533,7 @@ meetingPage = new Page("meeting",
         })
 
         $('#pause-button').click(function() {
-            app.meeting.logPause(true);
+            app.meeting.logPauseStart();
 
             $('.hide-when-paused').addClass('hidden')
             $('.show-when-paused').removeClass('hidden')
@@ -635,7 +608,7 @@ meetingPage = new Page("meeting",
 
 
         for (var i = 0; i < app.meeting.members.length; i++) {
-          app.meeting.logMeetingMemberChange(app.meeting.members[i], "member_added")
+          app.meeting.logMeetingMemberAdd(app.meeting.members[i])
         }
     },
     function onHide() {
@@ -1280,7 +1253,7 @@ app = {
                   app.force_put = true
                   console.log("forcing a put")
                 }
-                app.force_put = false
+                else {app.force_put = false}
                 console.log(succ);
               },
               error: function(err) {
@@ -1457,11 +1430,11 @@ app = {
                   if (member.active) {
                     app.meeting.members.push(member)
                     member.badge.startRecording()
-                    app.meeting.logMeetingMemberChange(member, "member_added")
+                    app.meeting.logMeetingMemberAdd(member)
                   } else {
                     for (var j = 0; j < app.meeting.members.length; j++) {
                       if (app.meeting.members[j].key === key) {
-                        app.meeting.logMeetingMemberChange(member, "member_removed")
+                        app.meeting.logMeetingMemberRemove(member)
                         app.meeting.members.splice(j, 1)
                         break;
                       }
@@ -1741,11 +1714,11 @@ function Countdown(id, initial_time, callback) {
 
   this.end = function() {
     this.endtime = 0;
-    this.updateClock();
+    this.updateClock(true);
   }.bind(this);
 
 
-  this.updateClock = function() {
+  this.updateClock = function(forced_end) {
     var remaining = this.getTimeRemaining();
 
     this.minutesSpan.innerHTML =  remaining.minutes;
@@ -1753,7 +1726,7 @@ function Countdown(id, initial_time, callback) {
 
     if (remaining.total <= 0) {
       clearInterval(this.timeinterval);
-      callback()
+      callback(!!forced_end, remaining.total)
     }
   }.bind(this);
 
