@@ -224,7 +224,11 @@ function Meeting(group, members, type, moderator, description, location) {
         this.writeLog("meeting started", {
             'uuid': this.uuid,
             'start_time':new Date()/1000,
-            'log_version':"2.0"
+            'log_version':"2.0",
+            'moderator':this.moderator,
+            'location':this.location,
+            'description': this.description.replace(/\s\s+/g, ' '),
+            'type':this.type
         }).then(this.writeLog("hub joined", {
                 "uuid":device.uuid,
                 "locale":timeZoneFormatted
