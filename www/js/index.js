@@ -352,10 +352,10 @@ mainPage = new Page("main",
             $(".explore").addClass("hidden");
             $(".explore-chart-container").css("margin-top", "0px")
         }
-        app.meeting = null
         app.clearScannedBadges();
         setTimeout( function () {
           app.synchronizeIncompleteLogFiles()
+          app.meeting = null
         }, 5000)
 
         if (app.bluetoothInitialized) {
@@ -736,6 +736,11 @@ meetingPage = new Page("meeting",
 
         },
         onMeetingComplete: function() {
+            app.meeting.writeLog("meeting ended",
+                {'end_method':"manual", "end_time":new Date()/1000}
+            ).then(function () {
+                app.syncLogFile(app.meeting.getLogName(), true, "maunal", new Date())
+            })
             if (app.meeting.pause_countdown) {
               app.meeting.pause_countdown.end()
               app.meeting.pause_countdown = null
@@ -985,11 +990,6 @@ app = {
                 return;
             }
 
-            if (app.activePage == meetingPage) {
-              app.meeting.syncLogFile(true, "manual")
-            }
-
-
             if (app.activePage == mainPage) {
                 navigator.app.exitApp();
             } else {
@@ -1190,16 +1190,15 @@ app = {
 
     },
     synchronizeIncompleteLogFiles: function() {
-        if (! app.group || ! app.group.key) {
-            return;
-        }
         app.getCompletedMeetings(function(meetings) {
             app.getLogFiles(function(logfiles) {
                 for (var i = 0; i < logfiles.length; i++) {
                     var logfilename = logfiles[i].name;
                     if (logfilename.indexOf(device.uuid) == 0) {
                       if (!app.meeting || app.meeting.getLogName() != logfilename) {
+
                         app.syncLogFile(logfilename, true, "sync", null, meetings);
+
                       }
                     }
                 }
@@ -1213,9 +1212,8 @@ app = {
       if (meetings && (meeting_uuid in meetings) && meetings[meeting_uuid].is_complete) return
 
       if ( app.force_put || isComplete || (meetings && !(meeting_uuid in meetings))) {
-        if (app.force_put) {
-          app.force_put = false
-        }
+        app.force_put = false
+
         console.log("PUTiing")
         var fileTransfer = new FileTransfer();
         var uri = encodeURI(BASE_URL + app.project.key + "/meetings");
@@ -1241,12 +1239,41 @@ app = {
             options.params.ending_method = endingMethod;
         }
 
+        function addEndingChunk () {
+            if (endingMethod && endingMethod == "sync") {
+                window.fileStorage.load(meeting_uuid + ".txt").then( function(log) {
+                    var log = log.split('\n')
+                    var last = JSON.parse(log[log.length-2])
+                    if (last.type !== "meeting ended") {
+                        var log_obj = { 'type':"meeting ended",
+                                'log_timestamp':new Date()/1000,
+                                    'log_index':9999999,
+                                          'hub':device.uuid,
+                                         'data':{'ending_method':'sync'} }
+                        this.log_index += 1
+                        var str = JSON.stringify(log_obj) + '\n'
+                        console.log("appending ening chunk to meeting");
+                        return window.fileStorage.save(filename, str);
+                    } else {
+                        console.log("last chnk was ending, dont need to add more");
+                    }
+                })
+            } else {
+                console.log("putting witout adding endinng chunk");
+            }
+            return $.Deferred().resolve()
+        }
 
-        fileTransfer.upload(fileURL, uri, function win() {
-            console.log("Log backed up successfully!");
-        }, function fail(error) {
-            console.log("log backup error:", error)
-        }, options);
+        addEndingChunk().then(
+            setTimeout(function () {
+                fileTransfer.upload(fileURL, uri, function win() {
+                    console.log("Log backed up successfully!");
+                }, function fail(error) {
+                    console.log("log backup error:", error)
+                }, options)
+                },
+                1000)
+        )
 
       } else {
         console.log("Trying to POST")
@@ -1261,14 +1288,6 @@ app = {
           for (var i = last_log_serial + 1; i < num_chunks; i++) {
             toPost.push(log[i] + '\n')
           }
-//          while (i < num_chunks) {
-//            var chunkJSON =   log[i] ;
-//            chunk = (JSON.parse(chunkJSON))
-//            if (found_start || chunk.timestamp+chunk.timestamp_ms/1000.0 > last_update) {
-//              toPost.push(chunkJSON);
-//            }
-//           i++;
-//          }
 
           console.log("We last posted", last_log_serial, "at, ", last_log_timestamp)
           console.log("we now post the data:", toPost)
@@ -1282,7 +1301,9 @@ app = {
                   app.force_put = true
                   console.log("forcing a put")
                 }
-                else {app.force_put = false}
+                else {
+                    app.force_put = false;
+                }
                 console.log(succ);
               },
               error: function(err) {
