@@ -1123,6 +1123,11 @@ app = {
               url: BASE_URL + 0 +"/hubs",
               type:"PUT",
               dataType:"json",
+              beforeSend: function(xhr){
+                  xhr.setRequestHeader('X-LAST-MEMBER-UPDATE', 0)
+                  xhr.setRequestHeader("X-APPKEY", APP_KEY)
+                  xhr.setRequestHeader("X-HUB-UUID", device.uuid)
+              },
               success: function(result) {
                 console.log(result)
 
@@ -1142,16 +1147,26 @@ app = {
     },
     getCompletedMeetings: function(callback) {
         if (app.project) {
-          console.log("ProjectID is:", app.project.project_id)
           $.ajax({
               url: BASE_URL + app.project.key +"/hubs",
               type:"GET",
+              beforeSend: function(xhr){
+                  xhr.setRequestHeader('X-LAST-MEMBER-UPDATE', new Date()/1000);
+                  xhr.setRequestHeader("X-APPKEY", APP_KEY);
+                  xhr.setRequestHeader("X-HUB-UUID", device.uuid);
+              },
               dataType:"json",
               success: function(result) {
                 console.log(result)
                 localStorage.setItem("HubName", result.name)
                 $("#device-uuid").text(result.name)
                 app.is_god = result.is_god
+                for (var address in result.badge_map) {
+                    if (result.badge_map.hasOwnProperty(address)) {
+                        app.project.badge_map[address] = result.badge_map[address];
+                        console.log("adding " + result.badge_map[address] + " to  " + address)
+                    }
+                }
                 if (app.is_god) {
                   $(".god-only").removeClass("hidden")
                 } else {
