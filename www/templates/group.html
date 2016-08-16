@@ -1,0 +1,39 @@
+<ion-view view-title="OpenBadge" class="group-page">
+  <ion-content>
+      <div class="card local-members">
+          <h2>Local Members</h2>
+          <div ng-if="noLocalMembers()">
+              <b>No badges currently connected.</b>
+              <br/> <br/>
+              <em>Swipe right to add a badge!</em>
+          </div>
+          <div class="active-member capital"
+               ng-repeat="member in localMembers">
+              <b class="capital">{{member.owner}}</b>
+          </div>
+      </div>
+
+      <div class="card active-meetings">
+          <h2>Active Meetings</h2>
+          <div ng-if="noActiveMeetings()">
+              <b>This is the only meeting currently active.</b>
+              <br/> <br/>
+              <em>Feel free to continue, others will be able to join in as they come.</em>
+          </div>
+          <div class="foreign-hub-member"
+               ng-repeat="hub in foreignHubs">
+               <!-- we wrap city name in a div for compatibility with rtl languages -->
+              <div class=inline><b class="capital">{{hub.location.city}}</b></div>
+               -
+               {{hub.number}} <em><h3 style="display:inline">members present</h3></em>
+          </div>
+      </div>
+
+      <div class="button button-block start-button"
+              ng-click="startMeeting()">
+          Start Meeting
+      </div>
+  </ion-content>
+
+
+</ion-view>

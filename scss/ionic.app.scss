@@ -1,0 +1,277 @@
+/*
+To customize the look and feel of Ionic, you can override the variables
+in ionic's _variables.scss file.
+
+For example, you might change some of the default colors:
+
+$light:                           #fff !default;
+$stable:                          #f8f8f8 !default;
+$positive:                        #387ef5 !default;
+$calm:                            #11c1f3 !default;
+$balanced:                        #33cd5f !default;
+$energized:                       #ffc900 !default;
+$assertive:                       #ef473a !default;
+$royal:                           #886aea !default;
+$dark:                            #444 !default;
+*/
+
+// The path for our ionicons font files, relative to the built CSS in www/css
+$ionicons-font-path: "../lib/ionic/fonts" !default;
+
+// Include all of Ionic
+@import "www/lib/ionic/scss/ionic";
+
+@mixin rotate( $val: -90deg ) {
+  -webkit-transform: rotate($val);
+  -moz-transform: rotate($val);
+  -ms-transform: rotate($val);
+  -o-transform: rotate($val);
+  transform: rotate($val);
+}
+
+@mixin centerer($horizontal: true, $vertical: true) {
+  position: absolute;
+  @if ($horizontal and $vertical) {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  } @else if ($horizontal) {
+    left: 50%;
+    transform: translate(-50%, 0);
+  } @else if ($vertical) {
+    top: 50%;
+    transform: translate(0, -50%);
+  }
+}
+
+
+// Terra:
+
+$ultralight: #E8DDCB;
+$neutral1:   #CDB380;
+$neutral2:   #036564;
+$dark:       #033649;
+$extradark:  #031634;
+
+// Cake:
+
+// $ultralight: #C5e0dc;
+// $neutral1:   #f1d4af;
+// $neutral2:   #774f38;
+// $dark:       #e08e79;
+// $extradark:  #774f38;
+
+.rescan {
+    position: absolute;
+    top:10px;
+    right: 15px;
+    font-size: 24px;
+    stroke: #FFF;
+    fill: #FFF;
+}
+
+.capital {
+    text-transform: capitalize;
+}
+
+em {
+    font-style: italic !important;
+}
+
+.rescan-spinner {
+    position: absolute;
+    top:10px;
+    right: 10px;
+    font-size: 24px;
+    stroke: $ultralight;
+    fill: $ultralight;
+}
+
+.local-member-content, .foreign-hubs-content {
+    background-color: $extradark;
+
+    .selected, .selected.activated {
+
+        .ion-social-apple {
+            color: #d6d6d6;
+        }
+        .ion-social-android {
+            color: rgb(24, 175, 25);
+        }
+        h2 {
+            font-weight: bold;
+        }
+    }
+}
+
+.header-bar {
+    background-color: $neutral2 !important;
+    color: $ultralight !important;
+    border: none !important;
+    .title {
+        color: $ultralight !important;
+    }
+    button {
+        color: $ultralight !important;
+    }
+}
+
+.nav-bar {
+    background-color: $dark !important;
+    color: $ultralight !important;
+    border: none !important;
+    .title {
+        color: $ultralight !important;
+    }
+    button {
+        color: $ultralight !important;
+    }
+}
+
+.selected-local-icon {
+    position: absolute;
+    height: 100%;
+    left:-80px;
+    top:0;
+    @include rotate(180deg);
+}
+
+.selected-hub-icon {
+    position: absolute;
+    height: 100%;
+    right:-86px;
+    top:0;
+    //@include rotate(deg);
+}
+
+.meeting-member, .meeting-member.activated, .foreign-hub, .foreign-hub.activated{
+    overflow: visible;
+    padding-left: 45px;
+    border:none;
+    border-left: 8px solid $extradark;
+    border-right: 8px solid $extradark;
+    background-color: $extradark;
+
+    img {
+        float: left;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+    h2 {
+        margin-top: 5px;
+        text-transform: capitalize;
+        font-size: 16pt;
+        color: $ultralight;
+    }
+    h5 {
+        color: #999;
+    }
+
+    .battery {
+        font-size: 20pt;
+        position: absolute;
+        top: 25px;
+        right: 10px;
+        @include rotate(-90deg);
+    }
+
+    .ion-battery-low {
+        color:$assertive;
+    }
+
+    .ion-battery-half {
+        color: $energized;
+    }
+
+    .ion-battery-full {
+        color: $balanced;
+    }
+
+    .connection, .device {
+        font-size: 20pt;
+        float: left;
+        margin-right: 10px;
+        margin-top: 10px;
+        margin-left: -30px;
+        position: absolute;
+        overflow: hidden;
+        color: $neutral1;
+    }
+
+    .low {
+        clip: rect(0px,8px,20px,0px);
+        color: $assertive;
+
+    }
+
+    .mild {
+        clip: rect(0px,14px,20px,0px);
+        color: $energized;
+    }
+
+    .good {
+        clip: rect(0px,20px,20px,0px);
+        color: $balanced;
+    }
+}
+
+
+.group-page {
+    background-color: $neutral1;
+    ion-content {
+        //margin-bottom: 70px;
+    }
+
+
+
+    .start-button {
+        background-color: $neutral2;
+        @include centerer(true, false);
+        border-radius: 10px;
+        color: $ultralight;
+        //bottom: 0;
+        width: 250px;
+    }
+
+    .card {
+        background-color: $ultralight;
+        overflow: auto;
+        border-radius: 10px;
+        border: none;
+        margin: 10px;
+        padding-top: 5px;
+        padding-left: 10px;
+        padding-bottom: 10px;
+        h2 {
+            color: $dark;
+            font-size: 16pt;
+            font-weight: bold;
+            margin-bottom: 0px;
+        }
+
+    }
+    .list {
+        margin-top: 10px;
+        form {
+            padding-left: 10px;
+        }
+        .item, .item-input-wrapper {
+            margin: 0;
+            padding: 0;
+            height: 30px;
+            background-color: transparent;
+            color: $dark;
+            border: none;
+
+            button {
+                width: 80px;
+                background-color: $dark;
+                color: $ultralight;
+                font-size: 12pt;
+            }
+        }
+        .item-input {
+            margin-left:4px;
+        }
+    }
+}

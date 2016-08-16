@@ -1,0 +1,70 @@
+<ion-side-menus enable-menu-with-back-views="false">
+  <ion-side-menu-content  edge-drag-threshold="true">
+    <ion-nav-bar class="bar-dark nav-bar">
+      <ion-nav-back-button>
+      </ion-nav-back-button>
+
+      <!-- <ion-nav-buttons side="right">
+        <button class="button button-icon button-clear ion-earth" menu-toggle="right">
+        </button>
+      </ion-nav-buttons> -->
+      <ion-nav-buttons side="left">
+          <button class="button button-icon button-clear ion-person-add" menu-toggle="left">
+          </button>
+      </ion-nav-buttons>
+    </ion-nav-bar>
+    <ion-nav-view name="menuContent"></ion-nav-view>
+  </ion-side-menu-content>
+<!--
+  <ion-side-menu side="right">
+    <ion-header-bar class="bar-dark header-bar">
+      <h1 class="title">Add Foreign Hubs</h1>
+    </ion-header-bar>
+    <ion-content scrollbar-y="false" direction="y" class="foreign-hubs-content has-header">
+
+      <ion-list>
+        <ion-item class="foreign-hub"
+                  ng-repeat="hub in foreignHubs"
+                  ng-click="toggleHub(hub)"
+                  ng-class="{selected: hubIsInGroup(hub)}">
+          <i class="device" ng-class="hub.device"> </i>
+          <img class="selected-hub-icon"
+               src="img/selected.png"
+               ng-show="hubIsInGroup(hub)"></img>
+          <h2>{{hub.location.city}}</h2>
+          <h5>{{hub.number}} members present</h5>
+        </ion-item>
+      </ion-list>
+    </ion-content>
+  </ion-side-menu> -->
+
+
+
+  <ion-side-menu side="left">
+    <ion-header-bar class="bar-dark header-bar">
+      <h1 class="title">Add Local Members</h1>
+      <i class='ion-android-refresh rescan'
+         ng-click="startScan()"
+         ng-show="!isScanning"></i>
+      <ion-spinner class='rescan-spinner' icon="ripple" ng-show="isScanning"></ion-spinner>
+    </ion-header-bar>
+    <ion-content scrollbar-y="false" class="local-member-content has-header">
+
+      <ion-list>
+        <ion-item class="meeting-member"
+                  ng-repeat="found in foundBadges | orderBy:'-rssi'"
+                  ng-class="{selected: badgeIsInGroup(found)}"
+                  ng-click="toggleMember(found)">
+          <i class="connection ion-connection-bars" ng-class="found.strength"> </i>
+          <img class="selected-local-icon"
+               src="img/selected.png"
+               ng-show="badgeIsInGroup(found)"></img>
+          <h2 ng-class="{selected: badgeIsInGroup(found)}">{{found.owner}}</h2>
+          <h5>{{found.address | limitTo: 17}}</h5>
+          <i class="battery" ng-class="found.battery"></i>
+        </ion-item>
+      </ion-list>
+    </ion-content>
+  </ion-side-menu>
+
+</ion-side-menus>
