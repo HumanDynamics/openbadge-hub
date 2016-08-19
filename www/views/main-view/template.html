@@ -1,0 +1,87 @@
+<ion-view view-title="OpenBadge" class="group-page">
+  <ion-nav-buttons side="right">
+    <button class="button button-icon button-clear ion-gear-a" ng-click="openModal()">
+    </button>
+    <script id="configure-hub.html" type="text/ng-template">
+      <ion-modal-view>
+        <div class="bar bar-header header">
+          <div class="h1 title">Configure Hub</div>
+          <button class="button button-icon icon ion-close-round" ng-click="closeModal()"></button>
+        </div>
+
+        <ion-content scroll="false" class="padding has-header">
+
+          <div class="list">
+            <label class="item item-input">
+              <span class="input-label">Hub Location</span>
+              <input ng-model="configOptions.hubName" type="text">
+            </label>
+            <label class="item item-input" ng-class="{error:configOptions.invalidKey}">
+              <span class="input-label">Access Code</span>
+              <input class="upper" ng-model="configOptions.projectKey" type="text">
+            </label>
+            <label class="item item-input">
+              <span class="input-label">Project Name</span>
+              <input ng-model="projectName" type="text" disabled="true">
+            </label>
+          </div>
+        </ion-content>
+
+        <div class="bar bar-footer save-button" ng-click="configureHub()">
+          <div class="title">Save Info</div>
+        </div>
+
+      </ion-modal-view>
+    </script>
+  </ion-nav-buttons>
+
+  <ion-content>
+      <div class="card local-members">
+          <h2>Local Members</h2>
+          <div ng-if="noLocalMembers()">
+              <b>No badges currently connected.</b>
+              <br/> <br/>
+              <em>Swipe right to add a badge!</em>
+          </div>
+          <div class="active-member capital"
+               ng-repeat="member in localMembers">
+              <span class="capital">{{member.owner}}</span>
+          </div>
+      </div>
+
+      <div class="card active-meetings">
+          <h2>Active Meetings</h2>
+          <div ng-if="noActiveMeetings()">
+              <b>This is the only meeting currently active.</b>
+              <br/> <br/>
+              <em>Feel free to continue, others will be able to join in as they come.</em>
+          </div>
+          <div class-"list active-meetings">
+              <div class="item card active-meeting item-button-right" ng-repeat="meeting in activeMeetings">
+                <div class="meeting-info">
+                  <h3>Meeting at
+                      <span ng-repeat="hub in meeting.hubs">
+                          {{$last && !$first ? 'and ' : ' '}}<em>{{hub}}</em>{{$last ? ' with:' : ", "}}
+                      </span>
+                  </h3>
+                  <ul>
+                      <li ng-repeat="member in meeting.members">
+                          {{member}}
+                      </li>
+                  </ul>
+                </div>
+                <button class="button button-outline join-button">
+                    Join
+                </button>
+              </div>
+          </div>
+      </div>
+
+
+  </ion-content>
+
+  <div class="bar bar-footer bar-balanced start-button" ng-click="startMeeting()">
+    <div class="title">Create New Meeting</div>
+  </div>
+
+</ion-view>

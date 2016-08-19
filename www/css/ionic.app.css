@@ -9815,7 +9815,33 @@ a.button {
   -webkit-transition-duration: 0s;
   transition-duration: 0s; }
 
-.rescan {
+body {
+  cursor: default; }
+  body ion-content {
+    max-width: 700px;
+    margin: 0 auto; }
+  body .capital {
+    text-transform: capitalize; }
+  body em {
+    font-style: italic !important; }
+  body .header-bar {
+    background-color: #036564 !important;
+    color: #E8DDCB !important;
+    border: none !important; }
+    body .header-bar .title {
+      color: #E8DDCB !important; }
+    body .header-bar button {
+      color: #E8DDCB !important; }
+  body .nav-bar {
+    background-color: #033649 !important;
+    color: #E8DDCB !important;
+    border: none !important; }
+    body .nav-bar .title {
+      color: #E8DDCB !important; }
+    body .nav-bar button {
+      color: #E8DDCB !important; }
+
+ion-side-menu .rescan {
   position: absolute;
   top: 10px;
   right: 15px;
@@ -9823,13 +9849,7 @@ a.button {
   stroke: #FFF;
   fill: #FFF; }
 
-.capital {
-  text-transform: capitalize; }
-
-em {
-  font-style: italic !important; }
-
-.rescan-spinner {
+ion-side-menu .rescan-spinner {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -9837,34 +9857,16 @@ em {
   stroke: #E8DDCB;
   fill: #E8DDCB; }
 
-.local-member-content, .foreign-hubs-content {
+ion-side-menu .local-member-content, ion-side-menu .foreign-hubs-content {
   background-color: #031634; }
-  .local-member-content .selected .ion-social-apple, .local-member-content .selected.activated .ion-social-apple, .foreign-hubs-content .selected .ion-social-apple, .foreign-hubs-content .selected.activated .ion-social-apple {
+  ion-side-menu .local-member-content .selected .ion-social-apple, ion-side-menu .local-member-content .selected.activated .ion-social-apple, ion-side-menu .foreign-hubs-content .selected .ion-social-apple, ion-side-menu .foreign-hubs-content .selected.activated .ion-social-apple {
     color: #d6d6d6; }
-  .local-member-content .selected .ion-social-android, .local-member-content .selected.activated .ion-social-android, .foreign-hubs-content .selected .ion-social-android, .foreign-hubs-content .selected.activated .ion-social-android {
+  ion-side-menu .local-member-content .selected .ion-social-android, ion-side-menu .local-member-content .selected.activated .ion-social-android, ion-side-menu .foreign-hubs-content .selected .ion-social-android, ion-side-menu .foreign-hubs-content .selected.activated .ion-social-android {
     color: #18af19; }
-  .local-member-content .selected h2, .local-member-content .selected.activated h2, .foreign-hubs-content .selected h2, .foreign-hubs-content .selected.activated h2 {
+  ion-side-menu .local-member-content .selected h2, ion-side-menu .local-member-content .selected.activated h2, ion-side-menu .foreign-hubs-content .selected h2, ion-side-menu .foreign-hubs-content .selected.activated h2 {
     font-weight: bold; }
 
-.header-bar {
-  background-color: #036564 !important;
-  color: #E8DDCB !important;
-  border: none !important; }
-  .header-bar .title {
-    color: #E8DDCB !important; }
-  .header-bar button {
-    color: #E8DDCB !important; }
-
-.nav-bar {
-  background-color: #033649 !important;
-  color: #E8DDCB !important;
-  border: none !important; }
-  .nav-bar .title {
-    color: #E8DDCB !important; }
-  .nav-bar button {
-    color: #E8DDCB !important; }
-
-.selected-local-icon {
+ion-side-menu .selected-local-icon {
   position: absolute;
   height: 100%;
   left: -80px;
@@ -9875,31 +9877,25 @@ em {
   -o-transform: rotate(180deg);
   transform: rotate(180deg); }
 
-.selected-hub-icon {
-  position: absolute;
-  height: 100%;
-  right: -86px;
-  top: 0; }
-
-.meeting-member, .meeting-member.activated, .foreign-hub, .foreign-hub.activated {
+ion-side-menu .meeting-member, ion-side-menu .meeting-member.activated, ion-side-menu .foreign-hub, ion-side-menu .foreign-hub.activated {
   overflow: visible;
   padding-left: 45px;
   border: none;
   border-left: 8px solid #031634;
   border-right: 8px solid #031634;
   background-color: #031634; }
-  .meeting-member img, .meeting-member.activated img, .foreign-hub img, .foreign-hub.activated img {
+  ion-side-menu .meeting-member img, ion-side-menu .meeting-member.activated img, ion-side-menu .foreign-hub img, ion-side-menu .foreign-hub.activated img {
     float: left;
     border-radius: 50%;
     margin-right: 10px; }
-  .meeting-member h2, .meeting-member.activated h2, .foreign-hub h2, .foreign-hub.activated h2 {
+  ion-side-menu .meeting-member h2, ion-side-menu .meeting-member.activated h2, ion-side-menu .foreign-hub h2, ion-side-menu .foreign-hub.activated h2 {
     margin-top: 5px;
     text-transform: capitalize;
     font-size: 16pt;
     color: #E8DDCB; }
-  .meeting-member h5, .meeting-member.activated h5, .foreign-hub h5, .foreign-hub.activated h5 {
+  ion-side-menu .meeting-member h5, ion-side-menu .meeting-member.activated h5, ion-side-menu .foreign-hub h5, ion-side-menu .foreign-hub.activated h5 {
     color: #999; }
-  .meeting-member .battery, .meeting-member.activated .battery, .foreign-hub .battery, .foreign-hub.activated .battery {
+  ion-side-menu .meeting-member .battery, ion-side-menu .meeting-member.activated .battery, ion-side-menu .foreign-hub .battery, ion-side-menu .foreign-hub.activated .battery {
     font-size: 20pt;
     position: absolute;
     top: 25px;
@@ -9909,13 +9905,13 @@ em {
     -ms-transform: rotate(-90deg);
     -o-transform: rotate(-90deg);
     transform: rotate(-90deg); }
-  .meeting-member .ion-battery-low, .meeting-member.activated .ion-battery-low, .foreign-hub .ion-battery-low, .foreign-hub.activated .ion-battery-low {
+  ion-side-menu .meeting-member .ion-battery-low, ion-side-menu .meeting-member.activated .ion-battery-low, ion-side-menu .foreign-hub .ion-battery-low, ion-side-menu .foreign-hub.activated .ion-battery-low {
     color: #ef473a; }
-  .meeting-member .ion-battery-half, .meeting-member.activated .ion-battery-half, .foreign-hub .ion-battery-half, .foreign-hub.activated .ion-battery-half {
+  ion-side-menu .meeting-member .ion-battery-half, ion-side-menu .meeting-member.activated .ion-battery-half, ion-side-menu .foreign-hub .ion-battery-half, ion-side-menu .foreign-hub.activated .ion-battery-half {
     color: #ffc900; }
-  .meeting-member .ion-battery-full, .meeting-member.activated .ion-battery-full, .foreign-hub .ion-battery-full, .foreign-hub.activated .ion-battery-full {
+  ion-side-menu .meeting-member .ion-battery-full, ion-side-menu .meeting-member.activated .ion-battery-full, ion-side-menu .foreign-hub .ion-battery-full, ion-side-menu .foreign-hub.activated .ion-battery-full {
     color: #33cd5f; }
-  .meeting-member .connection, .meeting-member .device, .meeting-member.activated .connection, .meeting-member.activated .device, .foreign-hub .connection, .foreign-hub .device, .foreign-hub.activated .connection, .foreign-hub.activated .device {
+  ion-side-menu .meeting-member .connection, ion-side-menu .meeting-member .device, ion-side-menu .meeting-member.activated .connection, ion-side-menu .meeting-member.activated .device, ion-side-menu .foreign-hub .connection, ion-side-menu .foreign-hub .device, ion-side-menu .foreign-hub.activated .connection, ion-side-menu .foreign-hub.activated .device {
     font-size: 20pt;
     float: left;
     margin-right: 10px;
@@ -9924,55 +9920,104 @@ em {
     position: absolute;
     overflow: hidden;
     color: #CDB380; }
-  .meeting-member .low, .meeting-member.activated .low, .foreign-hub .low, .foreign-hub.activated .low {
+  ion-side-menu .meeting-member .low, ion-side-menu .meeting-member.activated .low, ion-side-menu .foreign-hub .low, ion-side-menu .foreign-hub.activated .low {
     clip: rect(0px, 8px, 20px, 0px);
     color: #ef473a; }
-  .meeting-member .mild, .meeting-member.activated .mild, .foreign-hub .mild, .foreign-hub.activated .mild {
+  ion-side-menu .meeting-member .mild, ion-side-menu .meeting-member.activated .mild, ion-side-menu .foreign-hub .mild, ion-side-menu .foreign-hub.activated .mild {
     clip: rect(0px, 14px, 20px, 0px);
     color: #ffc900; }
-  .meeting-member .good, .meeting-member.activated .good, .foreign-hub .good, .foreign-hub.activated .good {
+  ion-side-menu .meeting-member .good, ion-side-menu .meeting-member.activated .good, ion-side-menu .foreign-hub .good, ion-side-menu .foreign-hub.activated .good {
     clip: rect(0px, 20px, 20px, 0px);
     color: #33cd5f; }
 
 .group-page {
   background-color: #CDB380; }
   .group-page .start-button {
-    background-color: #036564;
-    position: absolute;
-    left: 50%;
-    transform: translate(-50%, 0);
+    margin: 10px auto;
     border-radius: 10px;
-    color: #E8DDCB;
-    width: 250px; }
+    width: 250px;
+    background-color: #036564;
+    cursor: pointer; }
+    .group-page .start-button .title {
+      color: #E8DDCB; }
+  .group-page .start-button:hover .title {
+    color: #eee; }
   .group-page .card {
     background-color: #E8DDCB;
     overflow: auto;
     border-radius: 10px;
     border: none;
     margin: 10px;
-    padding-top: 5px;
+    padding-top: 7px;
     padding-left: 10px;
+    padding-right: 10px;
     padding-bottom: 10px; }
     .group-page .card h2 {
       color: #033649;
       font-size: 16pt;
       font-weight: bold;
-      margin-bottom: 0px; }
-  .group-page .list {
-    margin-top: 10px; }
-    .group-page .list form {
-      padding-left: 10px; }
-    .group-page .list .item, .group-page .list .item-input-wrapper {
-      margin: 0;
-      padding: 0;
-      height: 30px;
-      background-color: transparent;
-      color: #033649;
-      border: none; }
-      .group-page .list .item button, .group-page .list .item-input-wrapper button {
-        width: 80px;
-        background-color: #033649;
-        color: #E8DDCB;
-        font-size: 12pt; }
-    .group-page .list .item-input {
-      margin-left: 4px; }
+      margin-bottom: 2px; }
+    .group-page .card h3 {
+      margin-top: 3px;
+      font-size: 12pt;
+      margin-bottom: 5px; }
+    .group-page .card ul {
+      margin-left: 10px;
+      margin-right: 10px; }
+    .group-page .card .active-member::before {
+      content: "- "; }
+    .group-page .card .active-member {
+      padding-left: 10px;
+      font-size: 12pt;
+      color: #222; }
+    .group-page .card .item:last-child {
+      margin-bottom: 10px; }
+    .group-page .card .item {
+      background-color: #E8DDCB;
+      padding-bottom: 10px; }
+      .group-page .card .item .meeting-info h3 {
+        white-space: normal; }
+      .group-page .card .item .join-button {
+        margin-top: 10px;
+        border-color: #036564;
+        color: #036564;
+        position: absolute;
+        top: 50%;
+        transform: translate(0, -50%); }
+      .group-page .card .item .join-button:hover {
+        background-color: #036564;
+        color: #eee; }
+
+ion-modal-view {
+  max-width: 700px;
+  margin: 0 auto; }
+  ion-modal-view .header {
+    background-color: #036564 !important;
+    color: #E8DDCB !important;
+    border: none !important; }
+    ion-modal-view .header .title {
+      color: #E8DDCB !important; }
+    ion-modal-view .header .icon {
+      color: #E8DDCB; }
+  ion-modal-view ion-content {
+    background-color: #E8DDCB; }
+    ion-modal-view ion-content input {
+      padding-left: 10px !important; }
+    ion-modal-view ion-content .upper {
+      text-transform: uppercase; }
+    ion-modal-view ion-content .item-input {
+      padding-left: 10px;
+      padding-right: 10px;
+      margin-bottom: 5px;
+      border-radius: 10px !important; }
+    ion-modal-view ion-content .error {
+      background-color: #ff8383; }
+  ion-modal-view .save-button {
+    background-color: #033649;
+    color: #E8DDCB;
+    margin: 10px auto;
+    border-radius: 10px;
+    width: 250px;
+    cursor: pointer; }
+  ion-modal-view .save-button:hover {
+    color: #eee; }

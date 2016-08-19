@@ -1,16 +1,26 @@
 angular.module('ngOpenBadge.services')
 
 .factory('OBSMyProject', function() {
-    var MyProject = {
-        active_meetings:[],
+    var MyProject = {}
+
+    var LOGGING = true
+
+    MyProject = {
+        activeMeetings:[],
         key:"",
-        badge_map:{},
+        badgeMap:{},
         members:{},
         name:""
     }
 
     MyProject.create = function(data) {
-        MyProject = JSON.parse(data)
+        if (LOGGING) console.log("giving my project data:", data)
+
+        MyProject.activeMeetings = data.active_meetings
+        MyProject.key            = data.key
+        MyProject.badgeMap       = data.badgeMap
+        MyProject.members        = data.members
+        MyProject.name           = data.name
     }
 
     return MyProject

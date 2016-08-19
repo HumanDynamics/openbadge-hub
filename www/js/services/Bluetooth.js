@@ -5,22 +5,60 @@ angular.module('ngOpenBadge.services')
     var CRITICAL_LOGGING = true
     var MODERATE_LOGGING = false
 
-    var scan_promise;
+    // fake data that will be injected upon 'not supported' error.
+    // set to [] on prod.
+    var TESTING_DATA = [
+      {
+          owner:   "Jackson Kearl",
+          address: "34:3C:74:7E:92:EA",
+          battery: 'ion-battery-full',
+          rssi:    -45,
+          strength:'good'
+      },
+      {
+          owner:   "Oren Lederman",
+          address: "13:EC:29:4E:17:C7",
+          battery: 'ion-battery-low',
+          rssi:    -90,
+          strength:'low'
+      },
+      {
+          owner:   "عبد الحميد",
+          address: "CE:18:5F:D4:6C:5B",
+          battery: 'ion-battery-full',
+          rssi:    -63,
+          strength:'mild'
+      },
+      {
+          owner:   "Getsina Yassa",
+          address: "D6:6C:20:52:D3:A9",
+          battery: 'ion-battery-half',
+          rssi:    -45,
+          strength:'good'
+      },
+      {
+          owner:   "Paul Hager",
+          address: "74:F7:AD:73:D0:DF",
+          battery: 'ion-battery-half',
+          rssi:    -45,
+          strength:'good'
+      },
+    ]
+
+    var scanPromise;
 
     BluetoothFactory.init = function() {
         if (MODERATE_LOGGING) console.log("INITING BLUETOOTH")
         return $cordovaBluetoothLE.initialize({request:true})
     }
 
-    BluetoothFactory.startScan = function(badge_map) {
+    BluetoothFactory.startScan = function() {
         if (MODERATE_LOGGING) console.log("STARTING SCAN");
-        if (typeof badge_map === "undefined")
-            badge_map = {}      //badge_map we get from the server
 
-        if (typeof scan_promise !== "undefined")
-            scan_promise.reject("Starting new Scan")
+        if (typeof scanPromise !== "undefined")
+            scanPromise.reject("Starting new Scan")
 
-        scan_promise = $q.defer()
+        scanPromise = $q.defer()
 
         params = {
             services:[],
@@ -31,7 +69,12 @@ angular.module('ngOpenBadge.services')
             function startscan_error(obj) {
                 if (CRITICAL_LOGGING)
                     console.log("Scan error", obj.message);
-                scan_promise.reject(obj.message)
+                if (TESTING_DATA) {
+                  for (var i = 0; i < TESTING_DATA.length; i++) {
+                    scanPromise.notify(TESTING_DATA[i])
+                  }
+                  scanPromise.reject(obj.message)
+                }
             },
             function startscan_notify(obj) {
                 if (obj.status === "scanResult") {
@@ -42,7 +85,7 @@ angular.module('ngOpenBadge.services')
                             BluetoothFactory.fillVoltageFromAdvertisement(obj)
                             // tell the promise that we found something
                             var badge = {
-                                owner:   badge_map[obj.address],
+                                owner:   badgeMap[obj.address],
                                 address: obj.address,
                                 battery: obj.battery,
                                 rssi:    obj.rssi
@@ -52,7 +95,7 @@ angular.module('ngOpenBadge.services')
                             else if (badge.rssi < -60) { badge.strength = 'mild' }
                             else                       { badge.strength = 'good' }
 
-                            scan_promise.notify(badge)
+                            scanPromise.notify(badge)
                         }
                     }
                 }
@@ -62,14 +105,14 @@ angular.module('ngOpenBadge.services')
                         console.log("Scan started")
                 }
             });
-        return scan_promise.promise;
+        return scanPromise.promise;
     }
 
     BluetoothFactory.stopScan = function() {
         if (MODERATE_LOGGING) console.log("STOPPING SCAN");
 
-        if (scan_promise)
-            scan_promise.resolve("Stopping Scan")
+        if (scanPromise)
+            scanPromise.resolve("Stopping Scan")
 
         $cordovaBluetoothLE.stopScan().then(
             function stopscan_success(obj) {

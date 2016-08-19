@@ -3,12 +3,18 @@ angular.module('ngOpenBadge.services')
 .factory('OBSThisHub', function() {
     var ThisHub = {
         name:"",
-        last_updates:{},
+        lastUpdates:{},
         su:false
     }
 
+    var LOGGING = true
+
     ThisHub.create = function(data) {
-        ThisHub = JSON.parse(data)
+        if (LOGGING) console.log("giving my hub data:", data)
+
+        ThisHub.name        = data.name
+        ThisHub.lastUpdates = data.last_updates
+        ThisHub.su          = data.su
     }
 
     return ThisHub

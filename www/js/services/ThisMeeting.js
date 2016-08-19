@@ -4,8 +4,7 @@ angular.module('ngOpenBadge.services')
     var ThisMeeting = {};
 
     ThisMeeting.id = 0
-    ThisMeeting.localMembers   =  {}
-    ThisMeeting.activeMeetings =  {}
+    ThisMeeting.localMembers = {}
 
     ThisMeeting.create = function(newGroupJSON) {
         var newGroup = JSON.parse(newGroupJSON)
@@ -20,14 +19,14 @@ angular.module('ngOpenBadge.services')
 
     ThisMeeting.addLocalBadge = function(badgeJSON) {
         var badge = JSON.parse(badgeJSON)
-        ThisMeeting.localMembers[badge.owner] = badge
+        ThisMeeting.localMembers[badge.address] = badge
     }
 
     ThisMeeting.removeLocalBadge = function(badgeJSON) {
         var badge = JSON.parse(badgeJSON)
 
-        if (badge.owner in ThisMeeting.localMembers)
-            delete ThisMeeting.localMembers[badge.owner]
+        if (badge.address in ThisMeeting.localMembers)
+            delete ThisMeeting.localMembers[badge.address]
     }
 
     ThisMeeting.addForeignHub = function(foreignHubJSON) {

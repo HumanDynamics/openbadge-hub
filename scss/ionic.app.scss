@@ -61,90 +61,95 @@ $extradark:  #031634;
 // $dark:       #e08e79;
 // $extradark:  #774f38;
 
-.rescan {
+
+// globals. Could apply anyhwere.
+body {
+  cursor: default;
+
+  ion-content {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .capital {
+    text-transform: capitalize;
+  }
+
+  em {
+    font-style: italic !important;
+  }
+
+  .header-bar {
+    background-color: $neutral2 !important;
+    color: $ultralight !important;
+    border: none !important;
+    .title {
+      color: $ultralight !important;
+    }
+    button {
+      color: $ultralight !important;
+    }
+  }
+
+  .nav-bar {
+    background-color: $dark !important;
+    color: $ultralight !important;
+    border: none !important;
+    .title {
+      color: $ultralight !important;
+    }
+    button {
+      color: $ultralight !important;
+    }
+  }
+
+}
+
+ion-side-menu {
+  .rescan {
     position: absolute;
     top:10px;
     right: 15px;
     font-size: 24px;
     stroke: #FFF;
     fill: #FFF;
-}
+  }
 
-.capital {
-    text-transform: capitalize;
-}
-
-em {
-    font-style: italic !important;
-}
-
-.rescan-spinner {
+  .rescan-spinner {
     position: absolute;
     top:10px;
     right: 10px;
     font-size: 24px;
     stroke: $ultralight;
     fill: $ultralight;
-}
+  }
 
-.local-member-content, .foreign-hubs-content {
+  .local-member-content, .foreign-hubs-content {
     background-color: $extradark;
 
     .selected, .selected.activated {
 
-        .ion-social-apple {
-            color: #d6d6d6;
-        }
-        .ion-social-android {
-            color: rgb(24, 175, 25);
-        }
-        h2 {
-            font-weight: bold;
-        }
+      .ion-social-apple {
+        color: #d6d6d6;
+      }
+      .ion-social-android {
+        color: rgb(24, 175, 25);
+      }
+      h2 {
+        font-weight: bold;
+      }
     }
-}
+  }
 
-.header-bar {
-    background-color: $neutral2 !important;
-    color: $ultralight !important;
-    border: none !important;
-    .title {
-        color: $ultralight !important;
-    }
-    button {
-        color: $ultralight !important;
-    }
-}
-
-.nav-bar {
-    background-color: $dark !important;
-    color: $ultralight !important;
-    border: none !important;
-    .title {
-        color: $ultralight !important;
-    }
-    button {
-        color: $ultralight !important;
-    }
-}
-
-.selected-local-icon {
+  .selected-local-icon {
     position: absolute;
     height: 100%;
     left:-80px;
     top:0;
     @include rotate(180deg);
-}
+  }
 
-.selected-hub-icon {
-    position: absolute;
-    height: 100%;
-    right:-86px;
-    top:0;
-    //@include rotate(deg);
-}
-
-.meeting-member, .meeting-member.activated, .foreign-hub, .foreign-hub.activated{
+  .meeting-member, .meeting-member.activated, .foreign-hub, .foreign-hub.activated{
     overflow: visible;
     padding-left: 45px;
     border:none;
@@ -153,125 +158,207 @@ em {
     background-color: $extradark;
 
     img {
-        float: left;
-        border-radius: 50%;
-        margin-right: 10px;
+      float: left;
+      border-radius: 50%;
+      margin-right: 10px;
     }
     h2 {
-        margin-top: 5px;
-        text-transform: capitalize;
-        font-size: 16pt;
-        color: $ultralight;
+      margin-top: 5px;
+      text-transform: capitalize;
+      font-size: 16pt;
+      color: $ultralight;
     }
     h5 {
-        color: #999;
+      color: #999;
     }
 
     .battery {
-        font-size: 20pt;
-        position: absolute;
-        top: 25px;
-        right: 10px;
-        @include rotate(-90deg);
+      font-size: 20pt;
+      position: absolute;
+      top: 25px;
+      right: 10px;
+      @include rotate(-90deg);
     }
 
     .ion-battery-low {
-        color:$assertive;
+      color:$assertive;
     }
 
     .ion-battery-half {
-        color: $energized;
+      color: $energized;
     }
 
     .ion-battery-full {
-        color: $balanced;
+      color: $balanced;
     }
 
     .connection, .device {
-        font-size: 20pt;
-        float: left;
-        margin-right: 10px;
-        margin-top: 10px;
-        margin-left: -30px;
-        position: absolute;
-        overflow: hidden;
-        color: $neutral1;
+      font-size: 20pt;
+      float: left;
+      margin-right: 10px;
+      margin-top: 10px;
+      margin-left: -30px;
+      position: absolute;
+      overflow: hidden;
+      color: $neutral1;
     }
 
     .low {
-        clip: rect(0px,8px,20px,0px);
-        color: $assertive;
+      clip: rect(0px,8px,20px,0px);
+      color: $assertive;
 
     }
 
     .mild {
-        clip: rect(0px,14px,20px,0px);
-        color: $energized;
+      clip: rect(0px,14px,20px,0px);
+      color: $energized;
     }
 
     .good {
-        clip: rect(0px,20px,20px,0px);
-        color: $balanced;
+      clip: rect(0px,20px,20px,0px);
+      color: $balanced;
     }
+  }
 }
 
 
 .group-page {
-    background-color: $neutral1;
-    ion-content {
-        //margin-bottom: 70px;
+  background-color: $neutral1;
+
+  .start-button {
+    margin: 10px auto;
+    border-radius: 10px;
+    width: 250px;
+    background-color: $neutral2;
+    cursor: pointer;
+
+    .title {
+      color: $ultralight;
+    }
+  }
+  .start-button:hover {
+    .title {
+      color: #eee;
+    }
+  }
+
+  .card {
+    background-color: $ultralight;
+    overflow: auto;
+    border-radius: 10px;
+    border: none;
+    margin: 10px;
+    padding-top: 7px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    h2 {
+      color: $dark;
+      font-size: 16pt;
+      font-weight: bold;
+      margin-bottom: 2px;
     }
 
-
-
-    .start-button {
-        background-color: $neutral2;
-        @include centerer(true, false);
-        border-radius: 10px;
-        color: $ultralight;
-        //bottom: 0;
-        width: 250px;
+    h3 {
+      margin-top: 3px;
+      font-size: 12pt;
+      margin-bottom: 5px;
     }
 
-    .card {
-        background-color: $ultralight;
-        overflow: auto;
-        border-radius: 10px;
-        border: none;
-        margin: 10px;
-        padding-top: 5px;
-        padding-left: 10px;
-        padding-bottom: 10px;
-        h2 {
-            color: $dark;
-            font-size: 16pt;
-            font-weight: bold;
-            margin-bottom: 0px;
+    ul {
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+
+    .active-member::before {
+      content: "- ";
+    }
+    .active-member {
+      padding-left: 10px;
+      font-size: 12pt;
+      color: #222;
+    }
+    .item:last-child {
+      margin-bottom: 10px;
+    }
+
+    .item {
+      background-color: $ultralight;
+      padding-bottom: 10px;
+
+      .meeting-info {
+        h3 {
+          white-space: normal;
         }
+      }
 
-    }
-    .list {
+      .join-button {
+        //background-color: $neutral2;
         margin-top: 10px;
-        form {
-            padding-left: 10px;
-        }
-        .item, .item-input-wrapper {
-            margin: 0;
-            padding: 0;
-            height: 30px;
-            background-color: transparent;
-            color: $dark;
-            border: none;
+        border-color: $neutral2;
+        color: $neutral2;
+        @include centerer(false, true);
+        //color: #eee;
+      }
 
-            button {
-                width: 80px;
-                background-color: $dark;
-                color: $ultralight;
-                font-size: 12pt;
-            }
-        }
-        .item-input {
-            margin-left:4px;
-        }
+      .join-button:hover {
+        background-color: $neutral2;
+        color: #eee;
+      }
     }
+  }
+}
+
+ion-modal-view {
+  max-width: 700px;
+  margin: 0 auto;
+  .header {
+    background-color: $neutral2 !important;
+    color: $ultralight !important;
+    border: none !important;
+    .title {
+      color: $ultralight !important;
+    }
+
+    .icon {
+      color: $ultralight;
+    }
+  }
+
+  ion-content {
+    background-color: $ultralight;
+
+    input {
+      padding-left: 10px !important;
+    }
+
+    .upper {
+      text-transform: uppercase;
+    }
+
+    .item-input {
+      padding-left: 10px;
+      padding-right: 10px;
+      margin-bottom: 5px;
+      border-radius: 10px !important;
+    }
+
+    .error {
+      background-color: rgb(255, 131, 131);
+    }
+
+  }
+
+  .save-button {
+    background-color: $dark;
+    color: $ultralight;
+    margin: 10px auto;
+    border-radius: 10px;
+    width: 250px;
+    cursor: pointer;
+  }
+
+  .save-button:hover {
+    color: #eee;
+  }
 }

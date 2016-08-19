@@ -8,20 +8,24 @@
 angular.module('ngOpenBadge', ['ionic', 'ngOpenBadge.contollers', 'ngOpenBadge.services', 'ngOpenBadge.private'])
 
 .run(function($ionicPlatform, OBSBluetooth, OBPrivate, $http) {
+
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
 
     OBSBluetooth.init();
-    
-
-    $http.defaults.headers.common.APP_KEY = OBPrivate.APP_KEY;
-    $http.defaults.headers.common.X_HUB_UUID = OBPrivate.DEVICE_UUID;
 
     if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
+      console.plugins.device
       cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
       cordova.plugins.Keyboard.disableScroll(true);
+
+      OBPrivate.injectUUID(cordova.plugins.Device.uuid)
     }
+
+    $http.defaults.headers.common['X-APPKEY'] = OBPrivate.APP_KEY;
+    $http.defaults.headers.common['X-HUB-UUID'] = OBPrivate.DEVICE_UUID;
+
 
     if (window.StatusBar) {
       // org.apache.cordova.statusbar required
@@ -42,7 +46,7 @@ angular.module('ngOpenBadge', ['ionic', 'ngOpenBadge.contollers', 'ngOpenBadge.s
     .state('app', {
         url: '/app',
         abstract: true,
-        templateUrl: 'templates/sides.html',
+        templateUrl: 'views/badges-view/template.html',
         controller: 'SideMenusCtrl'
     })
 
@@ -51,7 +55,7 @@ angular.module('ngOpenBadge', ['ionic', 'ngOpenBadge.contollers', 'ngOpenBadge.s
     url: '/group',
     views: {
       'menuContent': {
-        templateUrl: 'templates/group.html',
+        templateUrl: 'views/main-view/template.html',
         controller: 'GroupViewCtrl'
       }
     }
@@ -61,7 +65,7 @@ angular.module('ngOpenBadge', ['ionic', 'ngOpenBadge.contollers', 'ngOpenBadge.s
     url: '/meeting',
     views: {
       'menuContent': {
-        templateUrl: 'templates/meeting.html',
+        templateUrl: 'views/meeting-view/template.html',
         controller: 'MeetingCtrl'
       }
     }
