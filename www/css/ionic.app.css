@@ -9817,9 +9817,10 @@ a.button {
 
 body {
   cursor: default; }
-  body ion-content {
+  body ion-content .content-center {
     max-width: 700px;
-    margin: 0 auto; }
+    margin: 0 auto;
+    padding-bottom: 50px; }
   body .capital {
     text-transform: capitalize; }
   body em {
@@ -9840,6 +9841,12 @@ body {
       color: #E8DDCB !important; }
     body .nav-bar button {
       color: #E8DDCB !important; }
+  body .ion-battery-low {
+    color: #ef473a; }
+  body .ion-battery-half {
+    color: #ffc900; }
+  body .ion-battery-full {
+    color: #33cd5f; }
 
 ion-side-menu .rescan {
   position: absolute;
@@ -9859,12 +9866,16 @@ ion-side-menu .rescan-spinner {
 
 ion-side-menu .local-member-content, ion-side-menu .foreign-hubs-content {
   background-color: #031634; }
-  ion-side-menu .local-member-content .selected .ion-social-apple, ion-side-menu .local-member-content .selected.activated .ion-social-apple, ion-side-menu .foreign-hubs-content .selected .ion-social-apple, ion-side-menu .foreign-hubs-content .selected.activated .ion-social-apple {
-    color: #d6d6d6; }
-  ion-side-menu .local-member-content .selected .ion-social-android, ion-side-menu .local-member-content .selected.activated .ion-social-android, ion-side-menu .foreign-hubs-content .selected .ion-social-android, ion-side-menu .foreign-hubs-content .selected.activated .ion-social-android {
-    color: #18af19; }
-  ion-side-menu .local-member-content .selected h2, ion-side-menu .local-member-content .selected.activated h2, ion-side-menu .foreign-hubs-content .selected h2, ion-side-menu .foreign-hubs-content .selected.activated h2 {
-    font-weight: bold; }
+  ion-side-menu .local-member-content .item.selected, ion-side-menu .local-member-content .item.selected.activated, ion-side-menu .foreign-hubs-content .item.selected, ion-side-menu .foreign-hubs-content .item.selected.activated {
+    background-color: #0a1f40;
+    border-left: 8px solid #0a1f40;
+    border-right: 8px solid #0a1f40; }
+    ion-side-menu .local-member-content .item.selected .ion-social-apple, ion-side-menu .local-member-content .item.selected.activated .ion-social-apple, ion-side-menu .foreign-hubs-content .item.selected .ion-social-apple, ion-side-menu .foreign-hubs-content .item.selected.activated .ion-social-apple {
+      color: #d6d6d6; }
+    ion-side-menu .local-member-content .item.selected .ion-social-android, ion-side-menu .local-member-content .item.selected.activated .ion-social-android, ion-side-menu .foreign-hubs-content .item.selected .ion-social-android, ion-side-menu .foreign-hubs-content .item.selected.activated .ion-social-android {
+      color: #18af19; }
+    ion-side-menu .local-member-content .item.selected h2, ion-side-menu .local-member-content .item.selected.activated h2, ion-side-menu .foreign-hubs-content .item.selected h2, ion-side-menu .foreign-hubs-content .item.selected.activated h2 {
+      font-weight: bold; }
 
 ion-side-menu .selected-local-icon {
   position: absolute;
@@ -9905,12 +9916,6 @@ ion-side-menu .meeting-member, ion-side-menu .meeting-member.activated, ion-side
     -ms-transform: rotate(-90deg);
     -o-transform: rotate(-90deg);
     transform: rotate(-90deg); }
-  ion-side-menu .meeting-member .ion-battery-low, ion-side-menu .meeting-member.activated .ion-battery-low, ion-side-menu .foreign-hub .ion-battery-low, ion-side-menu .foreign-hub.activated .ion-battery-low {
-    color: #ef473a; }
-  ion-side-menu .meeting-member .ion-battery-half, ion-side-menu .meeting-member.activated .ion-battery-half, ion-side-menu .foreign-hub .ion-battery-half, ion-side-menu .foreign-hub.activated .ion-battery-half {
-    color: #ffc900; }
-  ion-side-menu .meeting-member .ion-battery-full, ion-side-menu .meeting-member.activated .ion-battery-full, ion-side-menu .foreign-hub .ion-battery-full, ion-side-menu .foreign-hub.activated .ion-battery-full {
-    color: #33cd5f; }
   ion-side-menu .meeting-member .connection, ion-side-menu .meeting-member .device, ion-side-menu .meeting-member.activated .connection, ion-side-menu .meeting-member.activated .device, ion-side-menu .foreign-hub .connection, ion-side-menu .foreign-hub .device, ion-side-menu .foreign-hub.activated .connection, ion-side-menu .foreign-hub.activated .device {
     font-size: 20pt;
     float: left;
@@ -9932,6 +9937,23 @@ ion-side-menu .meeting-member, ion-side-menu .meeting-member.activated, ion-side
 
 .group-page {
   background-color: #CDB380; }
+  .group-page .spinner svg {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    top: 25px;
+    stroke: #033649;
+    fill: #033649; }
+  .group-page .spinner-box {
+    width: 30px;
+    margin: 0 auto;
+    position: relative;
+    top: -20px; }
+    .group-page .spinner-box svg {
+      width: 30px !important;
+      height: 30px !important;
+      stroke: #033649;
+      fill: #033649; }
   .group-page .start-button {
     margin: 10px auto;
     border-radius: 10px;
@@ -9945,13 +9967,17 @@ ion-side-menu .meeting-member, ion-side-menu .meeting-member.activated, ion-side
   .group-page .card {
     background-color: #E8DDCB;
     overflow: auto;
-    border-radius: 10px;
+    border-radius: 10px !important;
     border: none;
     margin: 10px;
     padding-top: 7px;
     padding-left: 10px;
     padding-right: 10px;
     padding-bottom: 10px; }
+    .group-page .card .meeting-member {
+      margin: 10px 0; }
+    .group-page .card .meeting-member:last-child {
+      margin-bottom: 0; }
     .group-page .card h2 {
       color: #033649;
       font-size: 16pt;
@@ -9961,36 +9987,40 @@ ion-side-menu .meeting-member, ion-side-menu .meeting-member.activated, ion-side
       margin-top: 3px;
       font-size: 12pt;
       margin-bottom: 5px; }
-    .group-page .card ul {
-      margin-left: 10px;
-      margin-right: 10px; }
-    .group-page .card .active-member::before {
-      content: "- "; }
-    .group-page .card .active-member {
-      padding-left: 10px;
-      font-size: 12pt;
-      color: #222; }
-    .group-page .card .item:last-child {
-      margin-bottom: 10px; }
-    .group-page .card .item {
-      background-color: #E8DDCB;
-      padding-bottom: 10px; }
-      .group-page .card .item .meeting-info h3 {
-        white-space: normal; }
-      .group-page .card .item .join-button {
-        margin-top: 10px;
-        border-color: #036564;
-        color: #036564;
-        position: absolute;
-        top: 50%;
-        transform: translate(0, -50%); }
-      .group-page .card .item .join-button:hover {
-        background-color: #036564;
-        color: #eee; }
+    .group-page .card .selected {
+      background-color: #f2e9da; }
+    .group-page .card .battery {
+      font-size: 20pt;
+      right: 10px;
+      position: absolute;
+      top: 50%;
+      transform: translate(0, -50%); }
+    .group-page .card .connection, .group-page .card .device {
+      font-size: 20pt;
+      margin-right: 10px;
+      overflow: hidden;
+      color: #CDB380;
+      position: absolute;
+      top: 50%;
+      transform: translate(0, -50%); }
+    .group-page .card .found-description {
+      margin-left: 30px; }
+    .group-page .card .low {
+      clip: rect(0px, 8px, 20px, 0px);
+      color: #ef473a; }
+    .group-page .card .mild {
+      clip: rect(0px, 14px, 20px, 0px);
+      color: #ffc900; }
+    .group-page .card .good {
+      clip: rect(0px, 20px, 20px, 0px);
+      color: #33cd5f; }
 
 ion-modal-view {
   max-width: 700px;
   margin: 0 auto; }
+  @media (min-width: 680px) {
+    ion-modal-view {
+      border-radius: 10px; } }
   ion-modal-view .header {
     background-color: #036564 !important;
     color: #E8DDCB !important;

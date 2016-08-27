@@ -1,27 +1,42 @@
 angular.module('ngOpenBadge.services')
 
-.factory('OBSMyProject', function() {
-    var MyProject = {}
+.factory('OBSMyProject', function(OBSStorage) {
+    var MyProject = {};
 
-    var LOGGING = true
+    var LOGGING = true;
 
     MyProject = {
         activeMeetings:[],
         key:"",
-        badgeMap:{},
         members:{},
         name:""
-    }
+    };
 
     MyProject.create = function(data) {
-        if (LOGGING) console.log("giving my project data:", data)
+        if (LOGGING) console.log("giving my project data:", data);
 
-        MyProject.activeMeetings = data.active_meetings
-        MyProject.key            = data.key
-        MyProject.badgeMap       = data.badgeMap
-        MyProject.members        = data.members
-        MyProject.name           = data.name
-    }
+        MyProject.activeMeetings = data.active_meetings;
+        MyProject.key            = data.key;
+        MyProject.members        = data.members;
+        MyProject.name           = data.name;
+    };
 
-    return MyProject
-})
+    MyProject.update = function(members) {
+      for (var address in members) {
+        if (members.hasOwnProperty(address)) {
+          if (LOGGING) console.log("adding member", member);
+          MyProject.members[address] = members[address];
+        }
+      }
+
+      OBSStorage.cacheProject({
+          activeMeetings:MyProject.activeMeetings,
+          key:MyProject.key,
+          members:MyProject.members,
+          name:MyProject.name
+      });
+
+    };
+
+    return MyProject;
+});

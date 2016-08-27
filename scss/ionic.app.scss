@@ -64,11 +64,15 @@ $extradark:  #031634;
 
 // globals. Could apply anyhwere.
 body {
+
   cursor: default;
 
   ion-content {
-    max-width: 700px;
-    margin: 0 auto;
+    .content-center {
+      max-width: 700px;
+      margin: 0 auto;
+      padding-bottom: 50px;
+    }
   }
 
   .capital {
@@ -103,6 +107,18 @@ body {
     }
   }
 
+  .ion-battery-low {
+    color:$assertive;
+  }
+
+  .ion-battery-half {
+    color: $energized;
+  }
+
+  .ion-battery-full {
+    color: $balanced;
+  }
+
 }
 
 ion-side-menu {
@@ -127,7 +143,11 @@ ion-side-menu {
   .local-member-content, .foreign-hubs-content {
     background-color: $extradark;
 
-    .selected, .selected.activated {
+    .item.selected, .item.selected.activated {
+      $selected: #0a1f40;
+      background-color: $selected;
+      border-left: 8px solid $selected;
+      border-right: 8px solid $selected;
 
       .ion-social-apple {
         color: #d6d6d6;
@@ -180,18 +200,6 @@ ion-side-menu {
       @include rotate(-90deg);
     }
 
-    .ion-battery-low {
-      color:$assertive;
-    }
-
-    .ion-battery-half {
-      color: $energized;
-    }
-
-    .ion-battery-full {
-      color: $balanced;
-    }
-
     .connection, .device {
       font-size: 20pt;
       float: left;
@@ -223,7 +231,37 @@ ion-side-menu {
 
 
 .group-page {
+
+  .spinner svg {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    top: 25px;
+    stroke: $dark;
+    fill: $dark;
+  }
+
+  .spinner-box {
+
+    width: 30px;
+    margin: 0 auto;
+
+    position: relative;
+    top: -20px;
+
+    svg  {
+      width: 30px !important;
+      height: 30px !important;
+      stroke: $dark;
+      fill: $dark;
+    }
+  }
+
+
+
   background-color: $neutral1;
+
+
 
   .start-button {
     margin: 10px auto;
@@ -242,10 +280,22 @@ ion-side-menu {
     }
   }
 
+
   .card {
+
+
+
+    .meeting-member {
+      margin: 10px 0;
+    }
+
+    .meeting-member:last-child {
+      margin-bottom: 0;
+    }
+
     background-color: $ultralight;
     overflow: auto;
-    border-radius: 10px;
+    border-radius: 10px !important;
     border: none;
     margin: 10px;
     padding-top: 7px;
@@ -265,53 +315,59 @@ ion-side-menu {
       margin-bottom: 5px;
     }
 
-    ul {
-      margin-left: 10px;
+
+    .selected {
+      $selected: #f2e9da;
+      background-color: $selected;
+    }
+
+
+    .battery {
+      font-size: 20pt;
+      right: 10px;
+      @include centerer(false,true);
+    }
+
+    .connection, .device {
+      font-size: 20pt;
       margin-right: 10px;
+      overflow: hidden;
+      color: $neutral1;
+      @include centerer(false, true);
     }
 
-    .active-member::before {
-      content: "- ";
-    }
-    .active-member {
-      padding-left: 10px;
-      font-size: 12pt;
-      color: #222;
-    }
-    .item:last-child {
-      margin-bottom: 10px;
+    .found-description {
+      margin-left: 30px;
     }
 
-    .item {
-      background-color: $ultralight;
-      padding-bottom: 10px;
+    .low {
+      clip: rect(0px,8px,20px,0px);
+      color: $assertive;
 
-      .meeting-info {
-        h3 {
-          white-space: normal;
-        }
-      }
+    }
 
-      .join-button {
-        //background-color: $neutral2;
-        margin-top: 10px;
-        border-color: $neutral2;
-        color: $neutral2;
-        @include centerer(false, true);
-        //color: #eee;
-      }
+    .mild {
+      clip: rect(0px,14px,20px,0px);
+      color: $energized;
+    }
 
-      .join-button:hover {
-        background-color: $neutral2;
-        color: #eee;
-      }
+    .good {
+      clip: rect(0px,20px,20px,0px);
+      color: $balanced;
     }
   }
 }
 
+
+
 ion-modal-view {
   max-width: 700px;
   margin: 0 auto;
+
+  @media (min-width: 680px) {
+    border-radius: 10px;
+  }
+
   .header {
     background-color: $neutral2 !important;
     color: $ultralight !important;

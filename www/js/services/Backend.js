@@ -1,67 +1,120 @@
 angular.module('ngOpenBadge.services')
 
-.factory('OBSBackend', function($http, $q, OBSThisHub, OBPrivate, OBSMyProject) {
-    var BackendInterface = {}
-    var baseURL = OBPrivate.BASE_URL;
-    var projectURL = baseURL + OBSThisHub.key + "/"
+.factory('OBSBackend', function($http, $q, OBSThisHub, OBPrivate, OBSMyProject, OBSStorage) {
+  var BackendInterface = {};
+  var baseURL = function () {return OBPrivate.BASE_URL;};
 
-    var LOGGING = true
+  var LOGGING = true;
 
-    BackendInterface.longTermRefresh = function() {
-        var defer = $q.defer()
-        $http.get(baseURL + 'projects').then(
-            function got_projects( response )
-            {
-                if (LOGGING) console.log("got long term data:", response)
-                OBSThisHub.create(response.data.hub)
-                OBSMyProject.create(response.data.project)
-                defer.resolve()
-            },
-            function error_projects(response) {
-                if (LOGGING) console.log("Ahh! Error getting long term data")
-                if (response.status == 404) {
-                    if (LOGGING) console.log("hub-uuid not found on server")
-                    defer.reject('not found')
-                } else {
-                    console.log(response)
-                    defer.reject('unknoen error')
-                }
+  BackendInterface.longTermRefresh = function() {
+    // Perform a full refresh of all data, both hub and project. Should be
+    //  called perhaps once per session. Needs to be called whenever a hub
+    //  changes project.
 
-            }
-        )
-        return defer.promise
-    }
+    var defer = $q.defer();
 
-    BackendInterface.configureHub = function(name, projectKey) {
-      var defer = $q.defer()
-      $http({
-        url:baseURL + '0/hubs',
-        method:"PUT",
-        headers:{
-          'X-HUB-NAME':name,
-          'X-PROJECT-KEY':projectKey.toUpperCase()
+    $http.get(baseURL() + 'projects').then(
+      function got_projects( response )
+      {
+        if (LOGGING) console.log("got project data:", response);
+
+        OBSMyProject.create(response.data.project);
+
+        OBSStorage.cacheProject(response.data.project);
+        OBSStorage.cacheMemberUpdate(new Date()/1000.0);
+
+        defer.resolve();
+      },
+      function error_projects(response) {
+        if (LOGGING) console.log("Ahh! Error getting long term data",response);
+
+        var cachedProject = OBSStorage.retrieveProject();
+        if ( cachedProject ) {
+          if (LOGGING) console.log("attempting to fill project data from cache", cachedProject);
+          OBSMyProject.create(cachedProject);
+          defer.resolve();
+        } else {
+          defer.reject();
         }
-      }).then(
-          function put_hub( response )
-          {
-              if (LOGGING) console.log("put hub data:", response)
-              defer.resolve()
-          },
-          function error_projects(response) {
-              if (LOGGING) console.log("Ahh! Error putting data", response)
-              defer.reject(response.status)
+      }
+    );
+    return defer.promise;
+  };
 
-          }
-      )
-      return defer.promise
-    }
+  BackendInterface.shortTermRefresh = function() {
+    // perform a partial refresh of just hub data, (SU status, new members)
+    var defer = $q.defer();
 
-    BackendInterface.initMeeting = function(data) {
-      return $http.put(projectURL + "hubs", {
-        data:{meeting_init_data:data}
-      })
-    }
+    var lastMemberUpdate = OBSStorage.retrieveMemberUpdate();
+    if (!lastMemberUpdate) lastMemberUpdate = 0;
 
-    return BackendInterface
+    $http.get(baseURL() + OBSMyProject.key + '/hubs',
+    {
+      headers:{'X-LAST-UPDATE':lastMemberUpdate}
+    }).then(
+      function got_projects( response )
+      {
+        if (LOGGING) console.log("got hub data:", response);
+        OBSThisHub.create(response.data);
 
-})
+        OBSStorage.cacheHub( response.data);
+        OBSStorage.cacheMemberUpdate( new Date()/1000.0);
+
+        defer.resolve();
+      },
+      function error_projects(response) {
+        if (LOGGING) console.log("Ahh! Error getting hub data", response);
+
+        var cachedHub = OBSStorage.retrieveHub();
+        if ( cachedHub ) {
+          if (LOGGING) console.log("attempting to fill hub data from cache", cachedHub);
+          OBSThisHub.create(cachedHub);
+        }
+
+        defer.reject();
+      }
+    );
+    return defer.promise;
+  };
+
+  BackendInterface.configureHub = function(name, projectKey) {
+    var defer = $q.defer();
+    $http({
+      url:baseURL() + '0/hubs',
+      method:"PUT",
+      headers:{
+        'X-HUB-NAME':name,
+        'X-PROJECT-KEY':projectKey.toUpperCase()
+      }
+    }).then(
+      function put_hub( response )
+      {
+        if (LOGGING) console.log("put hub data:", response);
+        defer.resolve();
+      },
+      function error_projects(response) {
+        if (LOGGING) console.log("Ahh! Error putting data", response);
+        defer.reject(response.status);
+
+      }
+    );
+    return defer.promise;
+  };
+
+  BackendInterface.initMeeting = function(data) {
+
+    return $http.put(baseURL() + OBSMyProject.key + "/meetings", {
+      data:{meeting_init_data:data}
+    });
+  };
+
+  BackendInterface.postEvents = function(events, meetingUUID) {
+    if (LOGGING) console.log("posting", events, "from", meetingUUID);
+    return $http.post(baseURL() + OBSMyProject.key + "/meetings", events, {
+      headers: {'X-MEETING-UUID':meetingUUID}
+    });
+  };
+
+  return BackendInterface;
+
+});

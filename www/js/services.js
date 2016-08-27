@@ -1,1 +1,1 @@
-angular.module('ngOpenBadge.services', ['ngCordovaBluetoothLE', 'ngJSPackStruct'])
+angular.module('ngOpenBadge.services', ['ngCordovaBluetoothLE', 'ngJSPackStruct']);

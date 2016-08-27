@@ -5,22 +5,30 @@
 // the 2nd parameter is an array of 'requires'
 // 'starter.services' is found in services.js
 // 'starter.controllers' is found in controllers.js
-angular.module('ngOpenBadge', ['ionic', 'ngOpenBadge.contollers', 'ngOpenBadge.services', 'ngOpenBadge.private'])
+angular.module('ngOpenBadge', ['ionic', 'ngCordova', 'ngOpenBadge.contollers', 'ngOpenBadge.services', 'ngOpenBadge.private'])
 
-.run(function($ionicPlatform, OBSBluetooth, OBPrivate, $http) {
+.run(function($ionicPlatform, $cordovaDevice, OBSBluetooth, OBPrivate, $http) {
 
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
 
-    OBSBluetooth.init();
+    OBSBluetooth.init().then();
 
-    if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
-      console.plugins.device
-      cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
-      cordova.plugins.Keyboard.disableScroll(true);
+    var uuid = "browser";
+    try {
+      uuid = $cordovaDevice.getUUID();
+    } catch (ex) {
 
-      OBPrivate.injectUUID(cordova.plugins.Device.uuid)
+    }
+    console.log("settinge device uuid to:", uuid);
+    OBPrivate.injectUUID(uuid);
+
+    if (window.cordova && window.cordova.plugins) {
+      if (window.cordova.plugins.Keyboard) {
+        cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+        cordova.plugins.Keyboard.disableScroll(true);
+      }
     }
 
     $http.defaults.headers.common['X-APPKEY'] = OBPrivate.APP_KEY;
@@ -46,7 +54,7 @@ angular.module('ngOpenBadge', ['ionic', 'ngOpenBadge.contollers', 'ngOpenBadge.s
     .state('app', {
         url: '/app',
         abstract: true,
-        templateUrl: 'views/badges-view/template.html',
+        templateUrl: 'views/side-view/side.template.html',
         controller: 'SideMenusCtrl'
     })
 
@@ -55,7 +63,7 @@ angular.module('ngOpenBadge', ['ionic', 'ngOpenBadge.contollers', 'ngOpenBadge.s
     url: '/group',
     views: {
       'menuContent': {
-        templateUrl: 'views/main-view/template.html',
+        templateUrl: 'views/main-view/main.template.html',
         controller: 'GroupViewCtrl'
       }
     }
@@ -65,7 +73,7 @@ angular.module('ngOpenBadge', ['ionic', 'ngOpenBadge.contollers', 'ngOpenBadge.s
     url: '/meeting',
     views: {
       'menuContent': {
-        templateUrl: 'views/meeting-view/template.html',
+        templateUrl: 'views/meeting-view/meeting.template.html',
         controller: 'MeetingCtrl'
       }
     }
