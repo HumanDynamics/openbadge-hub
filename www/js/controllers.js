@@ -1,1 +1,1 @@
-angular.module('ngOpenBadge.contollers', ['ngOpenBadge.services'])
+angular.module('ngOpenBadge.contollers', ['ngOpenBadge.services']);

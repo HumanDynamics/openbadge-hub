@@ -13,7 +13,7 @@ angular.module('ngOpenBadge.services')
     storage.setItem(projectKey, JSON.stringify(data));
   };
 
-  StorageService.retrieveProject = function () {
+  StorageService.retrieveProject = function() {
     return JSON.parse(storage.getItem(projectKey));
   };
 
@@ -22,7 +22,7 @@ angular.module('ngOpenBadge.services')
     storage.setItem(hubKey, JSON.stringify(data));
   };
 
-  StorageService.retrieveHub = function () {
+  StorageService.retrieveHub = function() {
     return JSON.parse(storage.getItem(hubKey));
   };
 
@@ -31,7 +31,7 @@ angular.module('ngOpenBadge.services')
     storage.setItem(lastMemberUpdateKey, JSON.stringify(data));
   };
 
-  StorageService.retrieveMemberUpdate = function () {
+  StorageService.retrieveMemberUpdate = function() {
     return JSON.parse(storage.getItem(lastMemberUpdateKey));
   };
 

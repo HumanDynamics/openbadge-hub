@@ -50,16 +50,16 @@ angular.module('ngOpenBadge', ['ionic', 'ngCordova', 'ngOpenBadge.contollers', '
   // Set up the various states which the app can be in.
   // Each state's controller can be found in controllers.js
   $stateProvider
-    // setup an abstract state for the side menu directive
+  // setup an abstract state for the side menu directive
     .state('app', {
-        url: '/app',
-        abstract: true,
-        templateUrl: 'views/side-view/side.template.html',
-        controller: 'SideMenusCtrl'
-    })
+    url: '/app',
+    abstract: true,
+    templateUrl: 'views/side-view/side.template.html',
+    controller: 'SideMenusCtrl'
+  })
 
-    // Each tab has its own nav history stack:
-    .state('app.group', {
+  // Each tab has its own nav history stack:
+  .state('app.group', {
     url: '/group',
     views: {
       'menuContent': {
@@ -67,9 +67,9 @@ angular.module('ngOpenBadge', ['ionic', 'ngCordova', 'ngOpenBadge.contollers', '
         controller: 'GroupViewCtrl'
       }
     }
-    })
+  })
 
-    .state('app.meeting', {
+  .state('app.meeting', {
     url: '/meeting',
     views: {
       'menuContent': {
@@ -77,9 +77,9 @@ angular.module('ngOpenBadge', ['ionic', 'ngCordova', 'ngOpenBadge.contollers', '
         controller: 'MeetingCtrl'
       }
     }
-    });
+  });
 
-    // if none of the above states are matched, use this as the fallback
-    $urlRouterProvider.otherwise('/app/group');
+  // if none of the above states are matched, use this as the fallback
+  $urlRouterProvider.otherwise('/app/group');
 
 });

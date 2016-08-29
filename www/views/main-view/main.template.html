@@ -1,46 +1,43 @@
+<!--
+This is the page used when initially creating the meeting.
+  -->
+
 <ion-view view-title="OpenBadge" class="group-page">
   <ion-nav-buttons side="left">
   </ion-nav-buttons>
 
   <ion-content>
-    <ion-refresher
-      on-refresh="longTermRefresh()"
-      spinner="dots">
+    <ion-refresher on-refresh="longTermRefresh()" spinner="dots">
     </ion-refresher>
     <div class="content-center">
       <div class="card local-members">
-          <h2>Nearby Members</h2>
-          <div ng-if="noFoundBadges()">
-              <b>No badges found.</b>
-              <br/> <br/>
-              <em>Make sure badges are turned on and in range!</em>
-          </div>
-          <div ng-if="!noFoundBadges()">
-              <b>Tap to add a member to your meeting</b>
-          </div>
-          <ion-list>
-            <ion-item class="card meeting-member"
-                      ng-repeat="found in foundBadges | orderBy:'-rssi'"
-                      ng-class="{selected: badgeIsInGroup(found)}"
-                      ng-click="toggleMember(found)">
-              <i class="connection ion-connection-bars" ng-class="found.strength"> </i>
-              <div class="found-description">
-                <h2 ng-class="{selected: badgeIsInGroup(found)}">{{found.owner}}</h2>
-                <h5>{{found.address | limitTo: 17}}</h5>
-              </div>
-              <i class="battery" ng-class="found.battery"></i>
-            </ion-item>
-            <div class="spinner-box" ng-if="isScanning">
-              <ion-spinner class="scannng" icon="ripple"></ion-spinner>
+        <h2>Nearby Members</h2>
+        <div ng-if="noFoundBadges()">
+          <b>No badges found.</b>
+          <br/> <br/>
+          <em>Make sure badges are turned on and in range!</em>
+        </div>
+        <div ng-if="!noFoundBadges()">
+          <b>Tap to add a member to your meeting</b>
+        </div>
+        <ion-list>
+          <ion-item class="card meeting-member" ng-repeat="found in foundBadges | orderBy:'-rssi'" ng-class="{selected: badgeIsInGroup(found)}" ng-click="toggleMember(found)">
+            <i class="connection ion-connection-bars" ng-class="found.strength"> </i>
+            <div class="found-description">
+              <h2 ng-class="{selected: badgeIsInGroup(found)}">{{found.owner}}</h2>
+              <h5>{{found.address | limitTo: 17}}</h5>
             </div>
-          </ion-list>
+            <i class="battery" ng-class="found.battery"></i>
+          </ion-item>
+          <div class="spinner-box" ng-if="isScanning">
+            <ion-spinner class="scannng" icon="ripple"></ion-spinner>
+          </div>
+        </ion-list>
       </div>
     </div>
   </ion-content>
 
-  <div class="bar bar-footer bar-balanced start-button"
-       ng-click="initMeeting()"
-       ng-if="!noLocalMembers()">
+  <div class="bar bar-footer bar-balanced start-button" ng-click="initMeeting()" ng-if="!noLocalMembers()">
     <div class="title">Create New Meeting</div>
   </div>
 
