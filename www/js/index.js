@@ -361,7 +361,7 @@ mainPage = new Page("main",
         if (app.bluetoothInitialized) {
             // after bluetooth is disabled, it's automatically re-enabled.
             //this.beginRefreshData();
-            //app.disableBluetooth();
+            app.disableBluetooth();
         }
     },
     function onHide() {
