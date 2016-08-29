@@ -361,7 +361,7 @@ mainPage = new Page("main",
         if (app.bluetoothInitialized) {
             // after bluetooth is disabled, it's automatically re-enabled.
             //this.beginRefreshData();
-            app.disableBluetooth();
+            //app.disableBluetooth();
         }
     },
     function onHide() {
@@ -1160,7 +1160,10 @@ app = {
                 console.log(result)
                 localStorage.setItem("HubName", result.name)
                 $("#device-uuid").text(result.name)
-                app.is_god = result.is_god
+                if (typeof(result.is_god) === "boolean") {
+                  app.is_god = result.is_god
+                  window.localStorage.setItem('godKey', app.is_god)
+                }
                 for (var address in result.badge_map) {
                     if (result.badge_map.hasOwnProperty(address)) {
                         app.project.badge_map[address] = result.badge_map[address];
@@ -1176,6 +1179,7 @@ app = {
 
               },
               error: function(error) {
+                app.is_god = !!(window.localStorage.getItem('godKey'))
               }
           });
         } else {

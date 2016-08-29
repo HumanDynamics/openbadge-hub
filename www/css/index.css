@@ -43,7 +43,10 @@ footer {
     bottom:0;
     left:0;
     right:0;
+    z-index: 1000;
 }
+
+.featherlight-content
 
 .event {
     border-radius:4px;
@@ -294,6 +297,17 @@ footer {
     color:#999 !important;
 }
 
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.featherlight-content ul {
+  margin-top: 50px;
+}
+
 .debug-charts {
     width:100%;
     padding-top:20px;
@@ -315,7 +329,7 @@ footer {
 
 
 .ion-person-add {
-  
+
 }
 
 #pause_info {

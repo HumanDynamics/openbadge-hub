@@ -3,7 +3,9 @@
     <head>
         <meta charset="utf-8" />
         <meta name="format-detection" content="telephone=no" />
-        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1,  target-densitydpi=device-dpi" />
+        <!-- <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1,  target-densitydpi=device-dpi" /> -->
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, minimum-scale=1, width=device-width" />
+
         <meta http-equiv="Content-Security-Policy"
               content="default-src *;
                script-src 'self' 'unsafe-inline' 'unsafe-eval'
@@ -64,7 +66,7 @@
                     <button class="button button-positive standard free startMeetingButton">Create New Meeting</button>
                     <button class="button button-positive explore hidden startMeetingButton">Inspect Badges</button>
                 </div>
-                
+
             </footer>
         </div>
         <div id="settings" class="page">
@@ -148,21 +150,21 @@
                     <div class="clock-title">Meeting Duration</div>
                     <div class="clock" id="clock"></div>
                 </div>
-              
+
                 <div id="pause_info" class="hidden show-when-paused">
                   <div id="meeting-pause-title">Meeting Paused</div>
-                  
+
                   <div id="break-countdown">
                       <span class="minutes"></span>:<span class="seconds"></span>
                   </div>
-                  
+
                   <button class="button button-block button-calm" id="add-5-button">+5:00</button>
                   <button class="button button-block button-calm" id="add-15-button">+15:00</button>
-                  
+
                   <button id="resume-bar" class="button button-energized hidden show-when-paused resume-button">Resume Meeting</button>
 
                 </div>
-              
+
                 <div id="visualization" class="visualization-wrapper standard free hide-when-paused">
                     <div id="meeting-mediator" class="meeting-mediator"></div>
                 </div>
@@ -176,14 +178,14 @@
 -->
                 <div style="height:500px">
                 </div>
-              
+
                 <ul id="devicelist-add-rem" class="devicelist"></ul>
-              
-              
+
+
                 <div class="standard free">
                     <div id="debug-charts" class="debug-charts"></div>
                 </div>
-              
+
                 <div class="explore hidden">
                     <div id="debug-charts" class="debug-charts explore-chart-container" style="overflow:scroll;"></div>
                 </div>
