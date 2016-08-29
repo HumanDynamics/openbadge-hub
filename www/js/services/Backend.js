@@ -1,3 +1,8 @@
+/*
+Here we wrap all HTTP requests, and provide some light data formatting and
+  send the data off to be sed by the various OpenBadgeServices
+*/
+
 angular.module('ngOpenBadge.services')
 
 .factory('OBSBackend', function($http, $q, OBSThisHub, OBPrivate, OBSMyProject, OBSStorage) {

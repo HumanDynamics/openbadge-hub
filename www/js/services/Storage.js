@@ -1,3 +1,9 @@
+/*
+All persistant storage should happen through this wrapper.
+
+This includes localStorage and WebSQL and all that fun stuff.
+*/
+
 angular.module('ngOpenBadge.services')
 
 .factory('OBSStorage', function() {
