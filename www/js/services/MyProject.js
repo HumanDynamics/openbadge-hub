@@ -1,3 +1,7 @@
+/*
+Information about the Project this hub is a part of
+*/
+
 angular.module('ngOpenBadge.services')
 
 .factory('OBSMyProject', function(OBSStorage) {

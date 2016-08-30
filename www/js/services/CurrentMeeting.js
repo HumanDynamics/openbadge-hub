@@ -1,3 +1,9 @@
+/*
+Data about our current meeting, including methods to stire data to the meeting,
+  interact with the badges of the meeting, and persist meeting data
+  */
+
+
 angular.module('ngOpenBadge.services')
 
 .factory('OBSCurrentMeeting', function(OBSBackend, OBSMyProject, OBSBluetooth,

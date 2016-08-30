@@ -1,6 +1,8 @@
 /*
-Here we wrap all HTTP requests, and provide some light data formatting and
-  send the data off to be sed by the various OpenBadgeServices
+Here we wrap all HTTP requests, provide some light data formatting, and
+  send the data off to be sed by the various OpenBadgeServices.
+
+We also interface with OBSStorage in order to fill requests when disconnected form internet
 */
 
 angular.module('ngOpenBadge.services')
@@ -62,6 +64,7 @@ angular.module('ngOpenBadge.services')
       function got_projects(response) {
         if (LOGGING) console.log("got hub data:", response);
         OBSThisHub.create(response.data);
+        OBSMyProject.update(response.data.member_updates);
 
         OBSStorage.cacheHub(response.data);
         OBSStorage.cacheMemberUpdate(new Date() / 1000.0);

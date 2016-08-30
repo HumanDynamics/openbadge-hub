@@ -1,3 +1,7 @@
+/*
+Methods for the Hub... like uploading stale logs. or something like that.
+*/
+
 angular.module('ngOpenBadge.services')
 
 .factory('OBSThisHub', function() {

@@ -1,3 +1,8 @@
+/*
+All interactiaons with the badges and the cordovaBlueetoothLE plugin should happen
+  through here.
+*/
+
 angular.module('ngOpenBadge.services')
 
 .factory('OBSBluetooth', function($cordovaBluetoothLE, $q, $struct, $timeout, $interval, OBSMyProject) {
@@ -11,78 +16,82 @@ angular.module('ngOpenBadge.services')
     rxCharacteristic: '6e400003-b5a3-f393-e0a9-e50e24dcca9e' // receive is from the phone's perspective
   };
 
-  // fake data that will be injected upon 'not supported' error.
-  // set to [] on prod.
-  var TESTING_DATA = [{
-    address: "E3:09:E5:88:38:B2",
-    battery: 'ion-battery-full',
-    rssi: -45,
-    strength: 'good'
-  }, {
-    address: "D2:3C:F6:B9:87:24",
-    battery: 'ion-battery-low',
-    rssi: -90,
-    strength: 'low'
-  }, {
-    address: "E8:AB:1E:5D:08:C9",
-    battery: 'ion-battery-full',
-    rssi: -63,
-    strength: 'mild'
-  }, {
-    address: "EA:B6:FF:F8:35:A3",
-    battery: 'ion-battery-half',
-    rssi: -45,
-    strength: 'good'
-  }, {
-    address: "C1:10:9A:32:E0:C4",
-    battery: 'ion-battery-half',
-    rssi: -45,
-    strength: 'good'
-  }, {
-    address: "E3:26:AC:CD:0B:65",
-    battery: 'ion-battery-full',
-    rssi: -45,
-    strength: 'good'
-  }, {
-    address: "FA:DF:C3:8C:99:3C",
-    battery: 'ion-battery-low',
-    rssi: -90,
-    strength: 'low'
-  }, {
-    address: "DB:C8:1B:F8:B8:0F",
-    battery: 'ion-battery-full',
-    rssi: -63,
-    strength: 'mild'
-  }, {
-    address: "F2:74:78:84:E2:76",
-    battery: 'ion-battery-half',
-    rssi: -45,
-    strength: 'good'
-  }, {
-    address: "FB:29:43:AC:9B:70",
-    battery: 'ion-battery-half',
-    rssi: -45,
-    strength: 'good'
-  }, {
-    address: "EF:18:8D:7E:4C:F3",
-    battery: 'ion-battery-half',
-    rssi: -45,
-    strength: 'good'
-  }, ];
-
+  // fake data that will be injected upon 'not supported' error. used only for testing in-browser
+  // set to [] or something falsy or delete on prod.
+  var TESTING_DATA = (
+    [{
+      address: "E3:09:E5:88:38:B2",
+      battery: 'ion-battery-full',
+      rssi: -45,
+      strength: 'good'
+    }, {
+      address: "D2:3C:F6:B9:87:24",
+      battery: 'ion-battery-low',
+      rssi: -90,
+      strength: 'low'
+    }, {
+      address: "E8:AB:1E:5D:08:C9",
+      battery: 'ion-battery-full',
+      rssi: -63,
+      strength: 'mild'
+    }, {
+      address: "EA:B6:FF:F8:35:A3",
+      battery: 'ion-battery-half',
+      rssi: -45,
+      strength: 'good'
+    }, {
+      address: "C1:10:9A:32:E0:C4",
+      battery: 'ion-battery-half',
+      rssi: -45,
+      strength: 'good'
+    }, {
+      address: "E3:26:AC:CD:0B:65",
+      battery: 'ion-battery-full',
+      rssi: -45,
+      strength: 'good'
+    }, {
+      address: "FA:DF:C3:8C:99:3C",
+      battery: 'ion-battery-low',
+      rssi: -90,
+      strength: 'low'
+    }, {
+      address: "DB:C8:1B:F8:B8:0F",
+      battery: 'ion-battery-full',
+      rssi: -63,
+      strength: 'mild'
+    }, {
+      address: "F2:74:78:84:E2:76",
+      battery: 'ion-battery-half',
+      rssi: -45,
+      strength: 'good'
+    }, {
+      address: "FB:29:43:AC:9B:70",
+      battery: 'ion-battery-half',
+      rssi: -45,
+      strength: 'good'
+    }, {
+      address: "EF:18:8D:7E:4C:F3",
+      battery: 'ion-battery-half',
+      rssi: -45,
+      strength: 'good'
+    }, ]
+  );
   //TESTING_DATA = null;
 
-  var scanPromise;
-
+  // first step when using bluetooth, have to make sure its on and stuff
   BluetoothFactory.init = function() {
     if (MODERATE_LOGGING) console.log("INITING BLUETOOTH");
     return $cordovaBluetoothLE.initialize({
       request: true
     }).then(
+      // this will fail on iPhone. Hopefully we can roll with it.
       $cordovaBluetoothLE.requestPermission
     );
   };
 
+  var scanPromise;
+
+  // start a scan, notify badge objects {voltage, owner, name, rssi, etc}
   BluetoothFactory.startScan = function() {
     var badgeMap = OBSMyProject.members;
 
@@ -93,6 +102,29 @@ angular.module('ngOpenBadge.services')
 
     scanPromise = $q.defer();
 
+    // read advert and insert the voltage data into a passed badge object
+    var fillVoltageFromAdvertisement = function(badge) {
+      var bytes;
+      var dataString;
+      if (badge.advertisement.manufacturerData) { //ios
+        bytes = $cordovaBluetoothLE.encodedStringToBytes(badge.advertisement.manufacturerData);
+        dataString = $cordovaBluetoothLE.bytesToString(bytes);
+      } else { // andriod
+        bytes = $cordovaBluetoothLE.encodedStringToBytes(badge.advertisement);
+        dataString = $cordovaBluetoothLE.bytesToString(bytes).substring(18, 26);
+      }
+      var badgeDataArray = $struct.Unpack('<HfBB', dataString);
+      badge.voltage = badgeDataArray[1];
+
+      if (badge.voltage < 2.4) {
+        badge.battery = 'ion-battery-low';
+      } else if (badge.voltage < 2.6) {
+        badge.battery = 'ion-battery-half';
+      } else {
+        badge.battery = 'ion-battery-full';
+      }
+    };
+
     var params = {
       services: [],
       "allowDuplicates": false
@@ -102,7 +134,7 @@ angular.module('ngOpenBadge.services')
       function startscan_error(obj) {
         if (CRITICAL_LOGGING)
           console.log("Scan error", obj.message);
-        if (TESTING_DATA) {
+        if (typeof(TESTING_DATA) !== "undefined" && TESTING_DATA) {
           for (var i = 0; i < TESTING_DATA.length; i++) {
             var fakeFound = TESTING_DATA[i];
             if (fakeFound.address in badgeMap) {
@@ -121,7 +153,7 @@ angular.module('ngOpenBadge.services')
             if (MODERATE_LOGGING)
               console.log("Scan found " + obj.address);
             if (obj.address in badgeMap) {
-              BluetoothFactory.fillVoltageFromAdvertisement(obj);
+              fillVoltageFromAdvertisement(obj);
               // tell the promise that we found something
               var badge = {
                 owner: badgeMap[obj.address].name,
@@ -152,6 +184,7 @@ angular.module('ngOpenBadge.services')
     return scanPromise.promise;
   };
 
+  // stop the scan, cancel the scanPromise
   BluetoothFactory.stopScan = function() {
     if (MODERATE_LOGGING) console.log("STOPPING SCAN");
 
@@ -170,6 +203,7 @@ angular.module('ngOpenBadge.services')
     );
   };
 
+  // is the hub currently engaged in a scan?
   BluetoothFactory.isScanning = function() {
     if (MODERATE_LOGGING) console.log("CHECKING SCAN");
     var deferredIsScannning = $q.defer();
@@ -181,28 +215,70 @@ angular.module('ngOpenBadge.services')
     return deferredIsScannning.promise;
   };
 
-  BluetoothFactory.fillVoltageFromAdvertisement = function(badge) {
-    var bytes;
-    var dataString;
-    if (badge.advertisement.manufacturerData) { //ios
-      bytes = $cordovaBluetoothLE.encodedStringToBytes(badge.advertisement.manufacturerData);
-      dataString = $cordovaBluetoothLE.bytesToString(bytes);
-    } else { // andriod
-      bytes = $cordovaBluetoothLE.encodedStringToBytes(badge.advertisement);
-      dataString = $cordovaBluetoothLE.bytesToString(bytes).substring(18, 26);
-    }
-    var badgeDataArray = $struct.Unpack('<HfBB', dataString);
-    badge.voltage = badgeDataArray[1];
+  // call this each time we connect and disconnect, to make sure we know whats going on
+  //   with the badge. Calls a badge.onSubscription function with the subscription notif on
+  //   notification.
+  BluetoothFactory.discoverAndSubscribe = function(badge) {
+    var discoverDevice = function() {
+      var address = badge.address;
+      //console.log(address + "|Internal call to discover");
+      var d = $q.defer();
+      var paramsObj = {
+        "address": address
+      };
+      $cordovaBluetoothLE.discover(paramsObj).then(
+        function discovered(obj) { // success
+          //console.log(address + "|Internal call to discover - success");
+          if (obj.status == "discovered") {
+            d.resolve(obj);
+          } else {
+            d.reject(obj);
+          }
+        },
+        function disconver_err(obj) { // failure function
+          d.reject(obj);
+        });
 
-    if (badge.voltage < 2.4) {
-      badge.battery = 'ion-battery-low';
-    } else if (badge.voltage < 2.6) {
-      badge.battery = 'ion-battery-half';
-    } else {
-      badge.battery = 'ion-battery-full';
-    }
+      return d.promise;
+    };
+
+    var subscribeToDevice = function() {
+      var address = badge.address;
+      //console.log(address + "|Internal call to subscribe");
+      var d = $q.defer();
+      var paramsObj = {
+        "address": address,
+        "service": nrf51UART.serviceUUID,
+        "characteristic": nrf51UART.rxCharacteristic,
+        "isNotification": true
+      };
+
+      $cordovaBluetoothLE.subscribe(paramsObj).then(null,
+        function subscribed_err(obj) {
+          d.reject(obj);
+        },
+        function subscribe_notif(obj) {
+          d.notify(obj);
+        });
+      return d.promise;
+    };
+
+    discoverDevice().then(subscribeToDevice).then(
+      null,
+      function(error) {
+        if (CRITICAL_LOGGING) console.log("subscription error!", error);
+      },
+      function(notif) {
+        if (MODERATE_LOGGING) console.log("got subscription update from", badge, notif);
+        if (badge.onSubscription) {
+          badge.onSubscription(notif);
+        }
+      }
+    );
   };
 
+  // start a long standing connection to badge. in the event this connection dies,
+  //   it will call `maintain` in order to keep the connection going
   BluetoothFactory.connect = function(badge) {
     badge.status = 'connecting';
     badge.connected = 'never';
@@ -237,6 +313,8 @@ angular.module('ngOpenBadge.services')
           badge.connected = 'yes';
           $timeout.cancel(connectTimeout);
 
+          BluetoothFactory.discoverAndSubscribe(badge);
+
           defer.notify(notif);
         } else {
           // oops, we disconnected. Change to reconnecting.
@@ -251,11 +329,12 @@ angular.module('ngOpenBadge.services')
     return defer.promise;
   };
 
+  // keep calling `reconnect` in order to keep a badge that was once connected still connected
   BluetoothFactory.maintain = function(badge, defered) {
     var address = badge.address;
     badge.status = 'reconnecting';
 
-    if (CRITICAL_LOGGING) console.log("Attempting to reconnect to", badge);
+    if (MODERATE_LOGGING) console.log("Attempting to reconnect to", badge);
 
     var connectTimeout = $timeout(function() {
       defered.reject("reconnection timedout to", address);
@@ -284,6 +363,7 @@ angular.module('ngOpenBadge.services')
           BluetoothFactory.maintain(badge, defered);
         } else {
           badge.connected = 'yes';
+          BluetoothFactory.discoverAndSubscribe(badge);
           badge.status = 'reconnected';
         }
       }
@@ -390,50 +470,6 @@ angular.module('ngOpenBadge.services')
           badge.onChunkCompleted(this.workingChunk);
         }
       }
-    };
-
-    var discoverDevice = function() {
-      var address = badge.address;
-      //console.log(address + "|Internal call to discover");
-      var d = $q.defer();
-      var paramsObj = {
-        "address": address
-      };
-      $cordovaBluetoothLE.discover(paramsObj).then(
-        function discovered(obj) { // success
-          //console.log(address + "|Internal call to discover - success");
-          if (obj.status == "discovered") {
-            d.resolve(obj);
-          } else {
-            d.reject(obj);
-          }
-        },
-        function disconver_err(obj) { // failure function
-          d.reject(obj);
-        });
-
-      return d.promise;
-    };
-
-    var subscribeToDevice = function() {
-      var address = badge.address;
-      //console.log(address + "|Internal call to subscribe");
-      var d = $q.defer();
-      var paramsObj = {
-        "address": address,
-        "service": nrf51UART.serviceUUID,
-        "characteristic": nrf51UART.rxCharacteristic,
-        "isNotification": true
-      };
-
-      $cordovaBluetoothLE.subscribe(paramsObj).then(null,
-        function subscribed_err(obj) {
-          d.reject(obj);
-        },
-        function subscribe_notif(obj) {
-          d.notify(obj);
-        });
-      return d.promise;
     };
 
     var sendDataRequest = function() {

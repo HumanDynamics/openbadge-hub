@@ -2,6 +2,8 @@
 All persistant storage should happen through this wrapper.
 
 This includes localStorage and WebSQL and all that fun stuff.
+
+Watch out becuase localStorage can't accept more than like 5MB or something.
 */
 
 angular.module('ngOpenBadge.services')
