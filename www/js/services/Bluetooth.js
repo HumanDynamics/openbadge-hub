@@ -314,6 +314,7 @@ angular.module('ngOpenBadge.services')
           $timeout.cancel(connectTimeout);
 
           BluetoothFactory.discoverAndSubscribe(badge);
+          BluetoothFactory.sendStartRecordingRequest(badge);
 
           defer.notify(notif);
         } else {
@@ -364,6 +365,7 @@ angular.module('ngOpenBadge.services')
         } else {
           badge.connected = 'yes';
           BluetoothFactory.discoverAndSubscribe(badge);
+          BluetoothFactory.sendStartRecordingRequest(badge);
           badge.status = 'reconnected';
         }
       }
@@ -413,7 +415,9 @@ angular.module('ngOpenBadge.services')
       return;
     }
 
-    var isHeader = function(data) {
+    chunkParsers = {badge:badge};
+
+    chunkParsers.isHeader = function(data) {
       try {
         var header = $struct.Unpack('<LHfHB', data);
         if (header[2] > 1 && header[2] < 4 || header[1] == 0) { // jshint ignore:line
@@ -423,7 +427,7 @@ angular.module('ngOpenBadge.services')
       return false;
     };
 
-    var onHeaderReceived = function(data) {
+    chunkParsers.onHeaderReceived = function(data) {
       console.log("Received a header: ");
       var header = $struct.Unpack('<LHfHB', data); //time, fraction time (ms), voltage, sample delay, number of samples
 
@@ -457,7 +461,7 @@ angular.module('ngOpenBadge.services')
       }
     };
 
-    var onDataReceived = function(data) {
+    chunkParsers.onDataReceived = function(data) {
       //parse as a datapacket
       var sampleArr = $struct.Unpack("<" + data.length + "B", data);
       Array.prototype.push.apply(badge.workingChunk.samples, sampleArr);
@@ -470,31 +474,25 @@ angular.module('ngOpenBadge.services')
           badge.onChunkCompleted(this.workingChunk);
         }
       }
-    };
+    }.bind(chunkParsers);
 
-    var sendDataRequest = function() {
+    sendDataRequest = function() {
       var ts_seconds = Math.floor(badge.lastUpdate);
       var ts_ms = badge.lastUpdate % 1;
       var timeString = $struct.Pack('<cLH', ['r', ts_seconds, ts_ms]);
       return BluetoothFactory.sendString(badge, timeString);
     };
 
-    discoverDevice().then(subscribeToDevice).then(
-      null,
-      function(error) {
-        console.log(error);
-      },
-      function(notif) {
-        console.log(notif);
-        if (notif.status == "subscribeResult") {
-          if (isHeader(notif)) {
-            onHeaderReceived(notif);
-          } else {
-            onDataReceived(notif);
-          }
+    badge.onSubscription = function () {
+      console.log(notif);
+      if (notif.status == "subscribeResult") {
+        if (this.isHeader(notif)) {
+          this.onHeaderReceived(notif);
+        } else {
+          this.onDataReceived(notif);
         }
       }
-    );
+    }.bind(chunkParsers);
 
     badge.collectDataInterval = $interval(function() {
       console.log("Requesting recording data");

@@ -13,6 +13,7 @@ angular.module('ngOpenBadge.services')
   var projectKey = "projectKey";
   var hubKey = "hubKey";
   var lastMemberUpdateKey = "lastMemberUpdateKey";
+  var toUploadKey = "toUploadKey";
   var storage = window.localStorage;
 
 
@@ -41,6 +42,27 @@ angular.module('ngOpenBadge.services')
 
   StorageService.retrieveMemberUpdate = function() {
     return JSON.parse(storage.getItem(lastMemberUpdateKey));
+  };
+
+
+  // store chunks to memory. right now this just puts them in
+  //  local storage, in the future should store to WebSQL or something
+  StorageService.saveChunks = function (chunks, meetingUUID) {
+    var previous = storage.getItem(meetingUUID);
+    previous = previous || '[]';
+    previous = JSON.parse(previous);
+
+    newChunksToUpload = previous.concat(chunks);
+    storage.setItem(meetingUUID, JSON.stringify(newChunksToUpload));
+
+
+    var toUpload = storage.getItem(toUploadKey);
+    toUpload = toUpload || '{}';
+    toUpload = JSON.parse(toUpload);
+
+    toUpload[meetingUUID] = true;
+
+    storage.setItem(toUploadKey, JSON.stringify(toUpload));
   };
 
   return StorageService;

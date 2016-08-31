@@ -1,15 +1,15 @@
 angular.module('ngOpenBadge.contollers')
 
-.controller('MeetingCtrl', function($scope, $interval, OBSBluetooth, OBSBackend, OBSThisMeeting) {
+.controller('MeetingCtrl', function($scope, $interval, OBSBluetooth, OBSBackend, OBSCurrentMeeting) {
 
   $scope.$on('$ionicView.enter', function(e) {
-    OBSThisMeeting.startDataCollection();
+    OBSCurrentMeeting.startDataCollection();
     //$scope.dataCollectionInterval = $interval( OBSThisMeeting.startDataCollection, 5000);
   });
 
   $scope.leaveMeeting = function() {
     $interval.cancel($scope.dataCollectionInterval);
-    OBSThisMeeting.leave("manual");
+    OBSCurrentMeeting.leave("manual");
   };
 
 });

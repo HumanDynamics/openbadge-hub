@@ -126,14 +126,6 @@ angular.module('ngOpenBadge.services')
       });
   };
 
-  CurrentMeeting.startDataCollection = function() {
-    for (var member in CurrentMeeting.localMembers) {
-      if (CurrentMeeting.localMembers.hasOwnProperty(member)) {
-        member = CurrentMeeting.localMembers[member];
-        OBSBluetooth.collectData(member);
-      }
-    }
-  };
 
   CurrentMeeting.postEvents = function() {
     var defer = $q.defer();
