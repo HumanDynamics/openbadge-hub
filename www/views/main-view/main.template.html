@@ -5,6 +5,15 @@ This is the page used when initially creating the meeting.
 <ion-view view-title="OpenBadge" class="group-page">
   <ion-nav-buttons side="left">
   </ion-nav-buttons>
+  <ion-nav-buttons side="right">
+    <ion-spinner ng-if="isScanning"
+                 style="fill:#E8DDCB;stroke:#E8DDCB;margin-top:3px;margin-right:2px;"
+                 class="scannng"
+                 icon="ripple">
+    </ion-spinner>
+    <!-- Lots of issues when trying to style that in the SCSS. Just leaving it out here...  -->
+  </ion-nav-buttons>
+
 
   <ion-content>
     <ion-refresher on-refresh="longTermRefresh()" spinner="dots">
@@ -29,9 +38,6 @@ This is the page used when initially creating the meeting.
             </div>
             <i class="battery" ng-class="found.battery"></i>
           </ion-item>
-          <div class="spinner-box" ng-if="isScanning">
-            <ion-spinner class="scannng" icon="ripple"></ion-spinner>
-          </div>
         </ion-list>
       </div>
     </div>

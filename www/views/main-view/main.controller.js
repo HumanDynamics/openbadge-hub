@@ -34,8 +34,13 @@ angular.module('ngOpenBadge.contollers')
 
   $scope.initMeeting = function() {
     OBSCurrentMeeting.init().then(
-      $state.go('app.meeting')
-    );
+      function(succ) {
+        console.log(succ);
+      },
+      function(error) {
+        console.log(error);
+      });
+    $state.go('app.meeting');
   };
 
 

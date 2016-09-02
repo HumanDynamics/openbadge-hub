@@ -280,8 +280,7 @@ angular.module('ngOpenBadge.services')
   // start a long standing connection to badge. in the event this connection dies,
   //   it will call `maintain` in order to keep the connection going
   BluetoothFactory.connect = function(badge) {
-    badge.status = 'connecting';
-    badge.connected = 'never';
+
     var address = badge.address;
     // creates and attempts to maintain a connection with the given address.
     // timesout if over 5 seconds for first connect, or 10 for a reconnect
@@ -290,7 +289,6 @@ angular.module('ngOpenBadge.services')
 
     var connectTimeout = $timeout(function() {
       defer.reject("connecting timedout to", badge);
-      badge.status = 'connect timeout';
 
     }, 5000);
 
@@ -298,7 +296,6 @@ angular.module('ngOpenBadge.services')
       address: address
     }).then(null,
       function(error) {
-        badge.status = 'connect error';
         //Handle errors
         $timeout.cancel(connectTimeout);
 
@@ -309,20 +306,16 @@ angular.module('ngOpenBadge.services')
         if (MODERATE_LOGGING) console.log(notif);
 
         if (notif.status == "connected") {
-          badge.status = 'connected';
-          badge.connected = 'yes';
           $timeout.cancel(connectTimeout);
 
-          BluetoothFactory.discoverAndSubscribe(badge);
-          BluetoothFactory.sendStartRecordingRequest(badge);
+          defer.notify(true);
 
-          defer.notify(notif);
         } else {
           // oops, we disconnected. Change to reconnecting.
-          badge.status = 'disconnected';
-          badge.connected = 'no';
           $timeout.cancel(connectTimeout);
           BluetoothFactory.maintain(badge, defer);
+          defer.notify(false);
+
         }
       }
     );
@@ -333,22 +326,18 @@ angular.module('ngOpenBadge.services')
   // keep calling `reconnect` in order to keep a badge that was once connected still connected
   BluetoothFactory.maintain = function(badge, defered) {
     var address = badge.address;
-    badge.status = 'reconnecting';
 
     if (MODERATE_LOGGING) console.log("Attempting to reconnect to", badge);
 
     var connectTimeout = $timeout(function() {
       defered.reject("reconnection timedout to", address);
-      badge.connected = 'no';
-      badge.status = 'reconnect timeout';
     }, 10000);
 
     $cordovaBluetoothLE.reconnect({
       address: address
     }).then(null,
       function(error) {
-        badge.connected = 'no';
-        badge.status = 'reconnect error';
+
         $timeout.cancel(connectTimeout);
         if (CRITICAL_LOGGING) console.log("Reconnect error:", error);
         defered.reject(error);
@@ -356,20 +345,18 @@ angular.module('ngOpenBadge.services')
       function(notif) {
         if (CRITICAL_LOGGING) console.log("Reconnect notification:", notif);
         $timeout.cancel(connectTimeout);
-        defered.notify(notif);
 
         if (notif.status === "disconnected") {
-          badge.connected = 'no';
-          badge.status = 'needs reconnect';
           BluetoothFactory.maintain(badge, defered);
+          defered.notify(false);
+
         } else {
-          badge.connected = 'yes';
-          BluetoothFactory.discoverAndSubscribe(badge);
-          BluetoothFactory.sendStartRecordingRequest(badge);
-          badge.status = 'reconnected';
+          defered.notify(true);
+
         }
       }
     );
+
     return defered;
   };
 
@@ -405,19 +392,33 @@ angular.module('ngOpenBadge.services')
     });
   };
 
-  BluetoothFactory.collectData = function(badge) {
 
-    if (badge.status !== "connected") {
-      console.log("Badge is not conencted right now, postponing data collection");
-      $timeout(function() {
-        BluetoothFactory.collectData(badge);
-      }, 1000);
-      return;
-    }
+  BluetoothFactory.initializeBadgeBluetooth = function (badge) {
 
-    chunkParsers = {badge:badge};
+    BluetoothFactory.connect(badge)  // start a long standing, self-recovering connection
+      .then(null, null, function(connected) {
+        if (connected) {
+          // send a message to start recording.
+          // we should discover and stuff here too.
+          return BluetoothFactory.discoverAndSubscribe(badge).then(
+            function () {
+              return BluetoothFactory.sendStartRecordingRequest(badge);
+            }
+          );
+        }
+      })
+      .then(function() {
+        // start a data collection interval, which calls the badge's `onSubscription`
+        //   with each chunk
+        return BluetoothFactory.collectData(member);
+      });
+  };
 
-    chunkParsers.isHeader = function(data) {
+
+  // create badge's onSubscribe function, which parses subscription data
+  BluetoothFactory.configureOnSubscribe = function(badge) {
+
+    var isHeader = function(data) {
       try {
         var header = $struct.Unpack('<LHfHB', data);
         if (header[2] > 1 && header[2] < 4 || header[1] == 0) { // jshint ignore:line
@@ -427,7 +428,7 @@ angular.module('ngOpenBadge.services')
       return false;
     };
 
-    chunkParsers.onHeaderReceived = function(data) {
+    var onHeaderReceived = function(data) {
       console.log("Received a header: ");
       var header = $struct.Unpack('<LHfHB', data); //time, fraction time (ms), voltage, sample delay, number of samples
 
@@ -461,7 +462,7 @@ angular.module('ngOpenBadge.services')
       }
     };
 
-    chunkParsers.onDataReceived = function(data) {
+    var onDataReceived = function(data) {
       //parse as a datapacket
       var sampleArr = $struct.Unpack("<" + data.length + "B", data);
       Array.prototype.push.apply(badge.workingChunk.samples, sampleArr);
@@ -476,28 +477,23 @@ angular.module('ngOpenBadge.services')
       }
     }.bind(chunkParsers);
 
-    sendDataRequest = function() {
+    var sendDataRequest = function() {
       var ts_seconds = Math.floor(badge.lastUpdate);
       var ts_ms = badge.lastUpdate % 1;
       var timeString = $struct.Pack('<cLH', ['r', ts_seconds, ts_ms]);
       return BluetoothFactory.sendString(badge, timeString);
     };
 
-    badge.onSubscription = function () {
+    badge.onSubscription = function (notif) {
       console.log(notif);
       if (notif.status == "subscribeResult") {
-        if (this.isHeader(notif)) {
-          this.onHeaderReceived(notif);
+        if (isHeader(notif)) {
+          onHeaderReceived(notif);
         } else {
-          this.onDataReceived(notif);
+          onDataReceived(notif);
         }
       }
-    }.bind(chunkParsers);
-
-    badge.collectDataInterval = $interval(function() {
-      console.log("Requesting recording data");
-      sendDataRequest();
-    }, 5000);
+    };
 
   };
 

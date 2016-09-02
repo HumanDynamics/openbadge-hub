@@ -9820,7 +9820,7 @@ body {
   body ion-content .content-center {
     max-width: 700px;
     margin: 0 auto;
-    padding-bottom: 50px; }
+    padding-bottom: 45px; }
   body .capital {
     text-transform: capitalize; }
   body em {
@@ -9951,9 +9951,7 @@ ion-side-menu .meeting-member, ion-side-menu .meeting-member.activated, ion-side
     top: -20px; }
     .group-page .spinner-box svg {
       width: 30px !important;
-      height: 30px !important;
-      stroke: #033649;
-      fill: #033649; }
+      height: 30px !important; }
   .group-page .start-button {
     margin: 10px auto;
     border-radius: 10px;

@@ -6,7 +6,7 @@ Data about our current meeting, including methods to stire data to the meeting,
 
 angular.module('ngOpenBadge.services')
 
-.factory('OBSCurrentMeeting', function(OBSBackend, OBSMyProject, OBSBluetooth,
+.factory('OBSCurrentMeeting', function(OBSBackend, OBSMyProject, OBSBluetooth, OBSStorage,
   $q, $timeout, $interval) {
   var CurrentMeeting = {};
 
@@ -27,9 +27,10 @@ angular.module('ngOpenBadge.services')
       delete CurrentMeeting.localMembers[badge.address];
   };
 
+  // Create an empty meeting on the server, add the event.
   CurrentMeeting.init = function() {
     var now = (new Date() / 1000.0);
-    CurrentMeeting.uuid = OBSMyProject.name + "|" + now.toString();
+    CurrentMeeting.uuid = OBSMyProject.key + "|" + now.toString();
     CurrentMeeting.logIndex = 0;
     CurrentMeeting.events = [{
       type: "meeting started",
@@ -41,20 +42,11 @@ angular.module('ngOpenBadge.services')
       }
     }];
 
-    CurrentMeeting.postInterval = $interval(function() {
-      console.log("Posting events");
-      CurrentMeeting.postEvents();
-    }, 10000);
-
-    return OBSBackend.initMeeting(CurrentMeeting.events[0]).then(
-      function() {
-        CurrentMeeting.lastUpdate = 0;
-        return CurrentMeeting.join();
-      }
-    );
+    return OBSBackend.initMeeting(CurrentMeeting.uuid);
   };
 
-
+  // add events for all the member/hub joins, tell our badges to start recodring,
+  //   start logging event data to server.
   CurrentMeeting.join = function() {
 
     var split = new Date().toString().split(" ");
@@ -81,15 +73,18 @@ angular.module('ngOpenBadge.services')
         }
       });
 
-      CurrentMeeting.initializeMemberBluetooth(member);
+      OBSBluetooth.initializeBadgeBluetooth(member);
     }
 
-    CurrentMeeting.postEvents();
+    CurrentMeeting.postInterval = $interval(function() {
+      console.log("Posting events");
+      CurrentMeeting.postEvents();
+    }, 10000);
 
   };
 
+  // uplaod a final chunk telling the server that we're done. stop the uploads.
   CurrentMeeting.leave = function(reason) {
-
     $interval.cancel(CurrentMeeting.postInterval);
 
     CurrentMeeting.events.push({
@@ -102,30 +97,6 @@ angular.module('ngOpenBadge.services')
     });
     return CurrentMeeting.postEvents();
   };
-
-  CurrentMeeting.initializeMemberBluetooth = function(member) {
-    return OBSBluetooth.connect(member)
-      .then(null, null, function() {
-        return OBSBluetooth.sendStartRecordingRequest(member);
-      })
-      .then(function() {
-        return OBSBluetooth.collectData(member);
-      })
-      .then(null, null, function(chunks) {
-        for (var i = 0; i < chunks.length; i++) {
-          CurrentMeeting.events.push({
-            type: "audio recieved",
-            log_timestamp: new Date() / 1000,
-            log_index: CurrentMeeting.logIndex++,
-            data: {
-              member: member.key,
-              samples: chunks[i].samples
-            }
-          });
-        }
-      });
-  };
-
 
   CurrentMeeting.postEvents = function() {
     var defer = $q.defer();
@@ -144,6 +115,7 @@ angular.module('ngOpenBadge.services')
       },
       function(error) {
         console.error(error);
+        OBSStorage.saveChunks(toUpload, CurrentMeeting.uuid);
         defer.reject(error);
       }
     );
@@ -152,4 +124,5 @@ angular.module('ngOpenBadge.services')
   };
 
   return CurrentMeeting;
+
 });

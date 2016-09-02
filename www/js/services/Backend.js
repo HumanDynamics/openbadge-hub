@@ -31,18 +31,21 @@ angular.module('ngOpenBadge.services')
         OBSStorage.cacheProject(response.data.project);
         OBSStorage.cacheMemberUpdate(new Date() / 1000.0);
 
-        defer.resolve();
+        defer.resolve(200);
       },
       function error_projects(response) {
         if (LOGGING) console.log("Ahh! Error getting long term data", response);
-
+        if (response.status == 404) {
+          BackendInterface.configureHub('new hub');
+          defer.reject(404);
+        }
         var cachedProject = OBSStorage.retrieveProject();
         if (cachedProject) {
           if (LOGGING) console.log("attempting to fill project data from cache", cachedProject);
           OBSMyProject.create(cachedProject);
-          defer.resolve();
+          defer.resolve(300);
         } else {
-          defer.reject();
+          defer.reject(400);
         }
       }
     );
@@ -86,14 +89,14 @@ angular.module('ngOpenBadge.services')
     return defer.promise;
   };
 
-  BackendInterface.configureHub = function(name, projectKey) {
+  // tell the server about this hub's uuid. add to OB-DEFAULT
+  BackendInterface.configureHub = function(name) {
     var defer = $q.defer();
     $http({
       url: baseURL() + '0/hubs',
       method: "PUT",
       headers: {
         'X-HUB-NAME': name,
-        'X-PROJECT-KEY': projectKey.toUpperCase()
       }
     }).then(
       function put_hub(response) {
@@ -109,15 +112,19 @@ angular.module('ngOpenBadge.services')
     return defer.promise;
   };
 
-  BackendInterface.initMeeting = function(data) {
-
-    return $http.put(baseURL() + OBSMyProject.key + "/meetings", {
-      data: {
-        meeting_init_data: data
+  // create the empty meeting object
+  BackendInterface.initMeeting = function(meetingUUID) {
+    return $http({
+      url: baseURL() + OBSMyProject.key + "/meetings",
+      method: 'PUT',
+      headers: {
+        'X-MEETING-UUID': meetingUUID,
+        'X-LOG-VERSION': '2.1'
       }
     });
   };
 
+  // add events to an existing meeting
   BackendInterface.postEvents = function(events, meetingUUID) {
     if (LOGGING) console.log("posting", events, "from", meetingUUID);
     return $http.post(baseURL() + OBSMyProject.key + "/meetings", events, {
