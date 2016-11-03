@@ -5,13 +5,13 @@ var qbluetoothle = require('./qbluetoothle');
 var BadgeDialogue = require('./badgeDialogue.js').BadgeDialogue;
 
 var nrf51UART = {
-	serviceUUID: '6e400001-b5a3-f393-e0a9-e50e24dcca9e', //
-	txCharacteristic: '6e400002-b5a3-f393-e0a9-e50e24dcca9e', // transmit is from the phone's perspective
-	rxCharacteristic: '6e400003-b5a3-f393-e0a9-e50e24dcca9e' // receive is from the phone's perspective
+  serviceUUID: '6e400001-b5a3-f393-e0a9-e50e24dcca9e', //
+  txCharacteristic: '6e400002-b5a3-f393-e0a9-e50e24dcca9e', // transmit is from the phone's perspective
+  rxCharacteristic: '6e400003-b5a3-f393-e0a9-e50e24dcca9e' // receive is from the phone's perspective
 };
 
 function Badge(address) {
-	this.address = address;
+  this.address = address;
 
     this.badgeDialogue = new BadgeDialogue(this);
 
@@ -20,22 +20,22 @@ function Badge(address) {
      * Sends a string to the device, and refreshes the disconnection timeout
      */
     this.sendString = function(stringValue) {
-		var address = this.address;
-		var badge = this;
+    var address = this.address;
+    var badge = this;
         badge.sendingData = true;
-		qbluetoothle.writeToDevice(address, stringValue).then(
-			function(obj) { // success
+    qbluetoothle.writeToDevice(address, stringValue).then(
+      function(obj) { // success
                 badge.log("Data sent! " + obj.status + "|Value: " + stringValue + "|Keys: " + Object.keys(obj));
             },
-			function(obj) { // failure
+      function(obj) { // failure
                 badge.log("Error sending data: " + obj.error + "|" + obj.message + "|" + " Keys: " + Object.keys(obj));
-			}
-		).finally(function() {
+      }
+    ).finally(function() {
             badge.refreshTimeout();
             badge.sendingData = false;
         });
         badge.refreshTimeout();
-	}.bind(this);
+  }.bind(this);
 
     /**
      * Sends a string to the device and immediately closes the connection.
@@ -133,22 +133,29 @@ function Badge(address) {
      */
     this.recordAndQueryData = function(callback) {
         var requestedData = false;
+        var requestedScanData = false;
         var requestedRecording = false;
+        var requestedScans = false;
+
+        var expecting = "status received"
+
         this._connect(
             function onConnect() {
                 // first, we send a status request to set the remote time
                 this.badgeDialogue.sendStatusRequest();
             },
             function onData(data) {
-                if (! requestedRecording) {
+                //console.log("exepcting:", expecting);
+                if (expecting == "status received") {
                     this.badgeDialogue.onStatusReceived(data);
                     // upon our first response, the first thing we want to do is tell the badge to start recording
                     this.badgeDialogue.sendStartRecRequest();
 
                     requestedRecording = true;
+                    expecting = "recording ack"
                     return;
                 }
-                if (! requestedData) {
+                else if (expecting == "recording ack") {
                     // upon our second response, we should tell it to start recording
                     this.badgeDialogue.onRecordingAckReceived(data);
 
@@ -156,14 +163,47 @@ function Badge(address) {
                     this.badgeDialogue.sendDataRequest(requestTs.seconds, requestTs.ms);
 
                     requestedData = true;
+                    expecting = "chunks"
                     return;
                 }
 
                 // finally, we've requested status and to start recording and to get data. we've received data!
-                if (this.badgeDialogue.isHeader(data) && this.badgeDialogue.expectingHeader) {
-                    this.badgeDialogue.onHeaderReceived(data);
+                else if (expecting == "chunks" ) {
+                  if (this.badgeDialogue.isHeader(data) && this.badgeDialogue.expectingHeader) {
+                      this.badgeDialogue.onHeaderReceived(data, function () {
+                        this.badgeDialogue.sendStartScanRequest();
+                        requestedScans = true
+                        expecting = "scan ack"
+                      }.bind(this));
+                  } else {
+                      this.badgeDialogue.onDataReceived(data);
+                      if (callback) {
+                          callback(this);
+                      }
+                  }
+                }
+
+                else if (expecting == "scan ack") {
+                    // upon our second response, we should tell it to start scanning
+                    //console.log("got ack of scan start request");
+                    this.badgeDialogue.onScanAckReceived(data);
+
+                    var requestTs = this.badgeDialogue.getLastSeenScanChunkTs();
+                    //console.log("sending request for scan data");
+                    this.badgeDialogue.sendScanDataRequest(requestTs.seconds, requestTs.ms);
+
+                    requestedScanData = true;
+                    expecting = "scan data";
+                    return;
+                }
+
+                // finally, we've requested status and to start scanning and to get data. we've received data!
+                else if (this.badgeDialogue.isScanHeader(data) && this.badgeDialogue.expectingScanHeader) {
+                    //console.log("got scan header");
+                    this.badgeDialogue.onScanHeaderReceived(data);
                 } else {
-                    this.badgeDialogue.onDataReceived(data);
+                    //console.log("got scan data");
+                    this.badgeDialogue.onScanDataReceived(data);
                     if (callback) {
                         callback(this);
                     }
@@ -171,6 +211,59 @@ function Badge(address) {
             }
         );
     }.bind(this);
+
+
+    // /**
+    //  * Starts scanning and then immediately queries for scan data upon response.
+    //  */
+    // this.scanAndQueryScan = function(callback) {
+    //     console.log("starting to scan");
+    //
+    //     var requestedData = false;
+    //     var requestedRecording = false;
+    //     this._connect(
+    //         function onConnect() {
+    //           console.log("scan connected");
+    //             // first, we send a status request to set the remote time
+    //             this.badgeDialogue.sendStatusRequest();
+    //         },
+    //         function onData(data) {
+    //             if (! requestedRecording) {
+    //                 this.badgeDialogue.onStatusReceived(data);
+    //                 // upon our first response, the first thing we want to do is tell the badge to start recording
+    //                 console.log("sending request to start scan");
+    //                 this.badgeDialogue.sendStartScanRequest();
+    //
+    //                 requestedRecording = true;
+    //                 return;
+    //             }
+    //             if (! requestedData) {
+    //                 // upon our second response, we should tell it to start scanning
+    //                 console.log("got ack of scan start request");
+    //                 this.badgeDialogue.onScanAckReceived(data);
+    //
+    //                 var requestTs = this.badgeDialogue.getLastSeenScanChunkTs();
+    //                 console.log("sending request for scan data");
+    //                 this.badgeDialogue.sendScanDataRequest(requestTs.seconds, requestTs.ms);
+    //
+    //                 requestedData = true;
+    //                 return;
+    //             }
+    //
+    //             // finally, we've requested status and to start scanning and to get data. we've received data!
+    //             if (this.badgeDialogue.isScanHeader(data) && this.badgeDialogue.expectingScanHeader) {
+    //               console.log("got scan header");
+    //                 this.badgeDialogue.onScanHeaderReceived(data);
+    //             } else {
+    //               console.log("got scan data");
+    //                 this.badgeDialogue.onScanDataReceived(data);
+    //                 if (callback) {
+    //                     callback(this);
+    //                 }
+    //             }
+    //         }
+    //     );
+    // }.bind(this);
 
 
     /**
@@ -182,7 +275,7 @@ function Badge(address) {
      * This function has a LOT of checks to ensure you don't connect to two badges at once or disconnect from a badge while connecting to it, or any other number of things that can go wrong.
      * DO NOT mess with them, or you will break everything.
      */
-	this._connect = function(onConnectCallback, onDataCallback, onFailure) {
+  this._connect = function(onConnectCallback, onDataCallback, onFailure) {
 
         // this.log("Attempting to connect");
 
@@ -194,6 +287,7 @@ function Badge(address) {
 
         if (window.aBadgeIsConnecting) {
             if (window.aBadgeIsConnecting != this && ! this.waitingToConnect) {
+                //console.log("Looks like something else is connecting. I'm waiting.");
                 // this.log("Looks like something else is connecting. I'm waiting.");
                 setTimeout(function() {
                     this.waitingToConnect = false;
@@ -214,11 +308,11 @@ function Badge(address) {
         this.isConnected = true;
         this.isConnecting = true;
 
-		var params = {
-			address: this.address
-		};
+    var params = {
+      address: this.address
+    };
 
-		var badge = this;
+    var badge = this;
         badge.log("Connecting");
 
         this.refreshTimeout();
@@ -263,28 +357,28 @@ function Badge(address) {
         }
 
         qbluetoothle.connectDevice(params)
-			.then(qbluetoothle.discoverDevice)
-			.then(qbluetoothle.subscribeToDevice)
-			.then(
-				function success(obj) { // success (of chain). Shouldn't really be called
+      .then(qbluetoothle.discoverDevice)
+      .then(qbluetoothle.subscribeToDevice)
+      .then(
+        function success(obj) { // success (of chain). Shouldn't really be called
                     badge.log("Success:" + obj.status + "| Keys: " + Object.keys(obj));
                     badge.logObject(obj);
-				},
+        },
                 fail,
-				function notify(obj) { // notification
-					if (obj.status == "subscribedResult") {
+        function notify(obj) { // notification
+          if (obj.status == "subscribedResult") {
                         badge.isConnecting = false;
                         if (window.aBadgeIsConnecting == badge) {
                             window.aBadgeIsConnecting = null;
                         }
-						var bytes = bluetoothle.encodedStringToBytes(obj.value);
-						var str = bluetoothle.bytesToString(bytes);
+            var bytes = bluetoothle.encodedStringToBytes(obj.value);
+            var str = bluetoothle.bytesToString(bytes);
                         badge.refreshTimeout();
 
                         onDataCallback.bind(badge)(str);
 
-					} else if (obj.status == "subscribed") {
-						badge.log("Subscribed: " + obj.status);
+          } else if (obj.status == "subscribed") {
+            badge.log("Subscribed: " + obj.status);
                         badge.isConnecting = false;
                         if (window.aBadgeIsConnecting == badge) {
                             window.aBadgeIsConnecting = null;
@@ -297,16 +391,16 @@ function Badge(address) {
 
                         onConnectCallback.bind(badge)();
 
-					} else {
+          } else {
                         badge.log("Unexpected Subscribe Status");
-					}
-				}
-			)
-			.finally(function() {
+          }
+        }
+      )
+      .finally(function() {
             });
 
 
-	}.bind(this);
+  }.bind(this);
 
     /**
      * This timeout should only be hit in the rarest of circumstances.
@@ -382,7 +476,7 @@ function Badge(address) {
      *
      * Instead, use close()
      */
-	this._close = function() {
+  this._close = function() {
         var badge = this;
 
         var address = this.address;
@@ -415,19 +509,19 @@ function Badge(address) {
         clearTimeout(this.connectionTimeout);
         badge.isDisconnecting = true;
 
-		var params = {
-			"address": address
-		};
-		qbluetoothle.closeDevice(params).then(
-			function(obj) { // success
+    var params = {
+      "address": address
+    };
+    qbluetoothle.closeDevice(params).then(
+      function(obj) { // success
                 badge.log("Close completed: " + obj.status + "|Keys: " + Object.keys(obj));
                 badge.logObject(obj);
-			},
-			function(obj) { // failure
-				badge.log("Close error: " + obj.error + " - " + obj.message + "|Keys: " + Object.keys(obj));
+      },
+      function(obj) { // failure
+        badge.log("Close error: " + obj.error + " - " + obj.message + "|Keys: " + Object.keys(obj));
                 badge.logObject(obj);
-			}
-		).finally(function() {
+      }
+    ).finally(function() {
             badge.lastDisconnect = new Date();
             badge.isConnected = false;
             badge.isDisconnecting = false;
@@ -435,7 +529,7 @@ function Badge(address) {
                 badge.onDisconnect();
             }
         });
-	}.bind(this);
+  }.bind(this);
 
 
     /**
@@ -459,5 +553,5 @@ function Badge(address) {
 }
 
 module.exports = {
-	Badge: Badge
+  Badge: Badge
 };

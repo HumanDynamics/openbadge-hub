@@ -91,6 +91,24 @@ function GroupMember(memberJson) {
     }.bind(this);
 
 
+
+
+    this.badge.badgeDialogue.onNewScanChunk = function(chunk) {
+        //this.dataAnalyzer.addScanChunk(chunk);
+    }.bind(this);
+
+    this.badge.badgeDialogue.onScanChunkCompleted = function(chunk) {
+        if (chunk.voltage) {
+            this.voltage = chunk.voltage;
+        }
+        if (this.meeting) {
+            this.meeting.logScanChunk(chunk, this);
+        }
+    }.bind(this);
+
+
+
+
     this.badge.onConnect = function() {
         if (this.$lastConnect) {
             this.$lastConnect.text(this.badge.lastConnect.toUTCString());
@@ -141,6 +159,15 @@ function Meeting(group, members, type, moderator, description, location) {
     }.bind(this);
 
 
+    this.logScanChunk = function(chunk, member) {
+        var chunk_data = chunk.toDict(member);
+        this.writeLog("scan received", chunk_data);
+        console.log("scan received", chunk_data);
+
+    }.bind(this);
+
+
+
     this.logPauseStart = function() {
         this.writeLog("pause started", null)
     }.bind(this);
@@ -167,11 +194,13 @@ function Meeting(group, members, type, moderator, description, location) {
     }.bind(this);
 
     this.writeLog = function(type, data) {
+
       var log_obj = { 'type':type,
               'log_timestamp':new Date()/1000,
                   'log_index':this.log_index,
                         'hub':device.uuid,
                        'data':data }
+
       this.log_index += 1
       var str = JSON.stringify(log_obj) + '\n'
       return window.fileStorage.save(this.getLogName(), str);
@@ -1380,9 +1409,106 @@ app = {
                         app.onScanUpdate(obj.address,voltage);
                     }
 
+                    if (obj.name == "HDBDG") {
+                        app.activeBadges.push(obj.address);
+                        var adbytes = bluetoothle.encodedStringToBytes(obj.advertisement);
+                        var adStr = bluetoothle.bytesToString(adbytes);
+                        var adBadgeData = app.unpack_broadcast_data(adStr)
+                        voltage = adBadgeData.voltage;
+                        app.onScanUpdate(obj.address,voltage);
+                    }
+
                 });
         });
     },
+    unpack_broadcast_data: function(data){
+
+      function bin2String(array) {
+        var result = "";
+        for (var i = 0; i < array.length; i++) {
+          result += String.fromCharCode(parseInt(array[i], 10));
+        }
+        return result;
+      }
+
+      var DEVICE_NAME_FIELD_ID = 9;
+      var BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME = 0x08;
+      var BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME = 0x09;
+      var BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA = 0xFF;
+      var CUSTOM_DATA_LEN = 14; // length of badge custom data adv
+      var MAC_LENGTH = 6; // length of a MAC address
+
+      var data_length = data.length;
+      var index = 0;
+      var name = null;
+      var field_len;
+      var adv_payload = null
+
+
+      while (adv_payload === null && index < data.length) {
+          // console.log("index:", index)
+          field_len = struct.Unpack('<B', data[index])[0];
+          // console.log("field_len is:", field_len);
+          index += 1
+
+          var field_type = struct.Unpack('<B', data[index])[0]
+          // console.log("field_type is:", field_type);
+          index += 1
+          // is it a name field?
+          if (field_type == BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME ||
+                  field_type == BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME) {
+              var name_field = data.slice(index, index+field_len)
+              var name_as_bytes = struct.Unpack('<' + name_field.length + 'B', name_field)
+              name = bin2String(name_as_bytes) // converts byte to string
+              console.log("got name:", name);
+            }
+
+          // is it the adv payload?
+          else if (field_type == BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA) {
+              if (field_len == CUSTOM_DATA_LEN){
+                  console.log("parsing adv data");
+                  var payload_field = data.slice(index, index + field_len)
+
+                  var payload = struct.Unpack('<HBBHB' + MAC_LENGTH + 'B' , payload_field)
+                  // console.log(payload);
+
+                  adv_payload = {}
+                  adv_payload['voltage'] =  1 + 0.01*payload[1]
+                  adv_payload['status_flags'] = payload[2]
+                  adv_payload['badge_id'] = payload[3]
+                  adv_payload['project_id'] = payload[4]
+
+                  // Check if the 1st bit is set
+                  var sync_status = adv_payload['status_flags'] & 1
+                  adv_payload['sync_status'] = sync_status
+
+                  // Check if the 2nd bit is set:
+                  var audio_status = adv_payload['status_flags'] & 2
+                  adv_payload['audio_status'] = audio_status
+
+                  // Check if the 3rd bit is set:
+                  var proximity_status = adv_payload['status_flags'] & 4
+                  adv_payload['proximity_status'] = proximity_status
+
+                  var mac = ""
+                  for (var i = 10; i >=5; i--) {
+                    mac += (payload[i]).toString(16);
+                    if (i>5) mac += ":";
+                  }
+
+                  // reverse?
+                  adv_payload['mac'] = mac
+                }
+              }
+
+          // advance to next field
+          index += field_len-1;
+        }
+      console.log(adv_payload);
+      return adv_payload;
+    },
+
+
     onScanComplete: function scanCompleted() {
         app.scanning = false;
         $("#scanning").addClass("hidden");
@@ -1604,6 +1730,7 @@ app = {
         for (var i = 0; i < app.meeting.members.length; ++i) {
             var badge = app.meeting.members[i].badge;
             badge.recordAndQueryData();
+            //badge.scanAndQueryScan();
         }
     },
 };
