@@ -187,7 +187,6 @@ function Scan() {
         return {
             voltage:this.voltage,
             timestamp:this.ts,
-            //num_devices:this.numDevices,
             rssi_distances:this.scans,
             member: member.key,
             badge_address:member.badgeId
