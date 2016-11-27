@@ -390,9 +390,16 @@ mainPage = new Page("main",
         if (app.bluetoothInitialized) {
             // after bluetooth is disabled, it's automatically re-enabled.
             //this.beginRefreshData();
-            if (device.version[0] == '4')
+            if (device.version[0] == '4') {
               app.disableBluetooth();
-
+            }
+            else {
+              clearInterval(app.badgeScanIntervalID);
+              app.badgeScanIntervalID = setInterval(function() {
+                  app.scanForBadges();
+              }, BADGE_SCAN_INTERVAL);
+              app.scanForBadges();
+            }
         }
     },
     function onHide() {
