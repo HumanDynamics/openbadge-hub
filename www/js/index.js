@@ -390,9 +390,7 @@ mainPage = new Page("main",
         if (app.bluetoothInitialized) {
             // after bluetooth is disabled, it's automatically re-enabled.
             //this.beginRefreshData();
-            if (device.version[0] == '4')
-              app.disableBluetooth();
-
+            app.disableBluetooth();
         }
     },
     function onHide() {
@@ -1128,7 +1126,6 @@ app = {
         });
     },
     disableBluetooth: function() {
-
         app.watchdogEnd();
         app.stopScan();
         console.log("Disabling Bluetooth!");
