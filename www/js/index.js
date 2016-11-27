@@ -161,7 +161,7 @@ function Meeting(group, members, type, moderator, description, location) {
 
     this.logScanChunk = function(chunk, member) {
         var chunk_data = chunk.toDict(member);
-        this.writeLog("scan received", chunk_data);
+        this.writeLog("proximity received", chunk_data);
         console.log("scan received", chunk_data);
 
     }.bind(this);
