@@ -189,7 +189,8 @@ function Scan() {
             timestamp:this.ts,
             //num_devices:this.numDevices,
             rssi_distances:this.scans,
-            member: member.key
+            member: member.key,
+            badge_address:member.badgeId
     };
     }.bind(this);
 }
