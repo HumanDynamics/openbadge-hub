@@ -1,3 +1,4 @@
+
 require('q');
 var qbluetoothle = require('./qbluetoothle');
 var Badge = require('./badge');
@@ -254,6 +255,7 @@ function Meeting(group, members, type, moderator, description, location) {
             'uuid': this.uuid,
             'start_time':new Date()/1000,
             'log_version':"2.0",
+            'hub_version':window.gitRevision,
             'moderator':this.moderator,
             'location':this.location,
             'description': this.description.replace(/\s\s+/g, ' '),
