@@ -1,3 +1,4 @@
+
 require('q');
 var qbluetoothle = require('./qbluetoothle');
 var Badge = require('./badge');
@@ -161,7 +162,7 @@ function Meeting(group, members, type, moderator, description, location) {
 
     this.logScanChunk = function(chunk, member) {
         var chunk_data = chunk.toDict(member);
-        this.writeLog("scan received", chunk_data);
+        this.writeLog("proximity received", chunk_data);
         console.log("scan received", chunk_data);
 
     }.bind(this);
@@ -254,6 +255,7 @@ function Meeting(group, members, type, moderator, description, location) {
             'uuid': this.uuid,
             'start_time':new Date()/1000,
             'log_version':"2.0",
+            'hub_version':window.gitRevision,
             'moderator':this.moderator,
             'location':this.location,
             'description': this.description.replace(/\s\s+/g, ' '),
@@ -390,7 +392,16 @@ mainPage = new Page("main",
         if (app.bluetoothInitialized) {
             // after bluetooth is disabled, it's automatically re-enabled.
             //this.beginRefreshData();
-            app.disableBluetooth();
+            if (device.version[0] == '4') {
+              app.disableBluetooth();
+            }
+            else {
+              clearInterval(app.badgeScanIntervalID);
+              app.badgeScanIntervalID = setInterval(function() {
+                  app.scanForBadges();
+              }, BADGE_SCAN_INTERVAL);
+              app.scanForBadges();
+            }
         }
     },
     function onHide() {

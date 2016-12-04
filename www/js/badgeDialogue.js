@@ -111,7 +111,7 @@ function Scan() {
     this.ts = -1;
     this.voltage = -1;
     this.numDevices = -1;
-    this.scans = [];
+    this.scans = {};
 
     /**
     *Sets the header of the chunk
@@ -142,7 +142,7 @@ function Scan() {
     }.bind(this);
 
     /*
-     * @return the samples of this chunk
+     * @return the scans in this chunk
      */
     this.getScans = function(){
         return this.scans;
@@ -152,11 +152,19 @@ function Scan() {
      * @param newData the byte array that represents more samples
      */
     this.addScans = function(newData) {
-        Array.prototype.push.apply(this.scans, newData);
+        //Array.prototype.push.apply(this.scans, newData);
         //this.samples = this.samples.concat(newData);
-        if (this.scans.length > this.numDevices) {
+
+        for (var id in newData) {
+          if (newData.hasOwnProperty(id)) {
+            this.scans[id] = newData[id]
+          }
+        }
+
+
+        if (Object.keys(this.scans).length> this.numDevices) {
             // error
-            console.error("Too many samples in chunk!",this.scans.length);
+            console.error("Too many samples in chunk!", Object.keys(this.scans).length);
         }
 
     }.bind(this);
@@ -168,20 +176,20 @@ function Scan() {
       this.ts = -1;
       this.voltage = -1;
       this.numDevices = -1;
-      this.scans = [];
+      this.scans = {};
     }.bind(this);
 
     this.completed = function() {
-      return this.scans.length >= this.numDevices;
+      return Object.keys(this.scans).length >= this.numDevices;
     }
 
     this.toDict = function (member) {
         return {
             voltage:this.voltage,
             timestamp:this.ts,
-            num_devices:this.numDevices,
-            scans:this.scans,
-            member: member.key
+            rssi_distances:this.scans,
+            member: member.key,
+            badge_address:member.badgeId
     };
     }.bind(this);
 }
@@ -507,13 +515,15 @@ function BadgeDialogue(badge) {
             var scan_arr = struct.Unpack("<" + toUnpack, data);
 
 
-            var unpacked = []
+            var unpacked = {}
             for (var i = 0; i < scan_arr.length; i+= 3 ) {
-              unpacked.push(
-                {'id' : scan_arr[i],
-                 'rssi': scan_arr[i+1],
-                 'scans': scan_arr[i+2]
-                })
+              var id = scan_arr[i]
+              var rssi = scan_arr[i+1]
+              var count = scan_arr[i+2]
+              unpacked[id] = {
+                 'rssi': rssi,
+                 'scans': count
+                }
             }
 
             this.workingScanChunk.addScans(unpacked);
