@@ -2,7 +2,7 @@
 This is the page used when initially creating the meeting.
   -->
 
-<ion-view view-title="OpenBadge" class="group-page">
+<ion-view view-title="OpenBadge {{hubName}}" class="group-page">
   <ion-nav-buttons side="left">
   </ion-nav-buttons>
   <ion-nav-buttons side="right">
@@ -11,12 +11,17 @@ This is the page used when initially creating the meeting.
                  class="scannng"
                  icon="ripple">
     </ion-spinner>
+    <i     class="icon icon ion-bluetooth bluetooth-button"
+           ng-if="!isScanning"
+        ng-click="startScan()"
+           style="font-size:20pt;margin-right:10px;margin-top:5px;">
+    </i>
     <!-- Lots of issues when trying to style that in the SCSS. Just leaving it out here...  -->
   </ion-nav-buttons>
 
 
   <ion-content>
-    <ion-refresher on-refresh="longTermRefresh()" spinner="dots">
+    <ion-refresher on-refresh="pullRefresh()" spinner="dots">
     </ion-refresher>
     <div class="content-center">
       <div class="card local-members">
@@ -27,14 +32,14 @@ This is the page used when initially creating the meeting.
           <em>Make sure badges are turned on and in range!</em>
         </div>
         <div ng-if="!noFoundBadges()">
-          <b>Tap to add a member to your meeting</b>
+          <b>Select members participating in your meeting</b>
         </div>
         <ion-list>
-          <ion-item class="card meeting-member" ng-repeat="found in foundBadges | orderBy:'-rssi'" ng-class="{selected: badgeIsInGroup(found)}" ng-click="toggleMember(found)">
+          <ion-item class="card meeting-member" ng-repeat="found in discoveredBadges" ng-class="{selected: badgeIsInGroup(found)}" ng-click="toggleMember(found)">
             <i class="connection ion-connection-bars" ng-class="found.strength"> </i>
             <div class="found-description">
-              <h2 ng-class="{selected: badgeIsInGroup(found)}">{{found.owner}}</h2>
-              <h5>{{found.address | limitTo: 17}}</h5>
+              <h2>{{found.owner}}</h2>
+              <h5>{{found.mac}}</h5>
             </div>
             <i class="battery" ng-class="found.battery"></i>
           </ion-item>
@@ -43,7 +48,7 @@ This is the page used when initially creating the meeting.
     </div>
   </ion-content>
 
-  <div class="bar bar-footer bar-balanced start-button" ng-click="initMeeting()" ng-if="!noLocalMembers()">
+  <div class="bar bar-footer bar-balanced start-button" ng-click="initMeeting()" ng-if="!nobadgesInMeeting()">
     <div class="title">Create New Meeting</div>
   </div>
 

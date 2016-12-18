@@ -13,16 +13,19 @@ angular.module('ngOpenBadge', ['ionic', 'ngCordova', 'ngOpenBadge.contollers', '
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
 
-    OBSBluetooth.init().then();
-
     var uuid = "browser";
     try {
       uuid = $cordovaDevice.getUUID();
     } catch (ex) {
 
     }
+
     console.log("settinge device uuid to:", uuid);
     OBPrivate.injectUUID(uuid);
+    $http.defaults.headers.common['X-APPKEY'] = OBPrivate.APP_KEY;
+    $http.defaults.headers.common['X-HUB-UUID'] = OBPrivate.DEVICE_UUID;
+
+    OBSBluetooth.init().then();
 
     if (window.cordova && window.cordova.plugins) {
       if (window.cordova.plugins.Keyboard) {
@@ -30,10 +33,6 @@ angular.module('ngOpenBadge', ['ionic', 'ngCordova', 'ngOpenBadge.contollers', '
         cordova.plugins.Keyboard.disableScroll(true);
       }
     }
-
-    $http.defaults.headers.common['X-APPKEY'] = OBPrivate.APP_KEY;
-    $http.defaults.headers.common['X-HUB-UUID'] = OBPrivate.DEVICE_UUID;
-
 
     if (window.StatusBar) {
       // org.apache.cordova.statusbar required

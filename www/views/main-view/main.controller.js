@@ -1,59 +1,59 @@
 angular.module('ngOpenBadge.contollers')
 
 .controller('GroupViewCtrl', function($scope, $state, $timeout, $q,
-  OBSBluetooth, OBSBackend, OBSCurrentMeeting, OBSMyProject, OBSThisHub) {
+  OBSBluetooth, OBSBackend, OBSCurrentMeeting, OBSMyProject, OBSThisHub,
+  $ionicSideMenuDelegate) {
 
-  $scope.localMembers = {};
+  $scope.badgesInMeeting = {};
   $scope.projectName = "";
   $scope.hubName = "";
   $scope.projectKey = "";
 
+  $scope.discoveredBadges = {};
+
+  $scope.$on('$ionicView.afterEnter', function(event) {
+    $ionicSideMenuDelegate.canDragContent(false);
+  });
+
+  //enable side menu drag before moving to next view
+  $scope.$on('$ionicView.beforeLeave', function (event) {
+    $ionicSideMenuDelegate.canDragContent(true);
+  });
+
   $scope.$on('$ionicView.enter', function(e) {
-    $scope.longTermRefresh().then($scope.startScan);
+    $timeout(function () {
+      $scope.longTermRefresh().then($scope.startScan);
+    }, 2000);
   });
 
   $scope.longTermRefresh = function() {
-    $scope.startScan();
 
+    console.log("Starting refresh");
     return OBSBackend.longTermRefresh()
       .then(OBSBackend.shortTermRefresh)
       .then(function() {
 
-        $scope.localMembers = OBSCurrentMeeting.localMembers;
+        $scope.badgesInMeeting = OBSCurrentMeeting.badgesInMeeting;
         $scope.projectName = OBSMyProject.name;
         $scope.hubName = OBSThisHub.name;
         $scope.projectKey = OBSMyProject.key;
 
         $scope.$broadcast('scroll.refreshComplete');
-      });
+        });
   };
 
-  $scope.noLocalMembers = function() {
-    return Object.keys($scope.localMembers).length === 0;
+  $scope.pullRefresh = function() {
+    $scope.longTermRefresh().then($scope.startScan);
+  };
+
+  $scope.nobadgesInMeeting = function() {
+    return Object.keys($scope.badgesInMeeting).length === 0;
   };
 
   $scope.initMeeting = function() {
-    OBSCurrentMeeting.init().then(
-      function(succ) {
-        console.log(succ);
-      },
-      function(error) {
-        console.log(error);
-      });
     $state.go('app.meeting');
   };
 
-
-  $scope.resetAll = function() {
-    $scope.foundBadgesIndex = {};
-    $scope.foundBadges = [];
-
-    for (var member in OBSCurrentMeeting.localMembers) {
-      if (OBSCurrentMeeting.localMembers.hasOwnProperty(member)) {
-        OBSCurrentMeeting.removeLocalBadge(member);
-      }
-    }
-  };
 
   $scope.startScan = function() {
 
@@ -68,17 +68,18 @@ angular.module('ngOpenBadge.contollers')
       function startscan_notify(badge) {
         // we found a badge, lets add it to our list
 
-        if (badge.address in $scope.foundBadgesIndex) {
-          var localBadge = $scope.foundBadges[$scope.foundBadgesIndex[badge.address]];
+        if (badge.mac in $scope.discoveredBadges) {
+          var existingBadge = $scope.discoveredBadges[badge.mac];
 
-          localBadge.strength = badge.strength;
-          localBadge.battery = badge.battery;
+          // update our previously discovered badge
+          existingBadge.strength = badge.strength;
+          existingBadge.battery  = badge.battery;
+
           //localBadge.rssi  = badge.rssi
           // maybe not update rssi to keep order ~constant
 
         } else {
-          $scope.foundBadgesIndex[badge.address] = $scope.foundBadges.length;
-          $scope.foundBadges.push(badge);
+          $scope.discoveredBadges[badge.mac] = badge;
           console.log("found new badge:", badge);
           // give ourselves a little more time
           $scope.resetTimer(10000);
@@ -110,15 +111,14 @@ angular.module('ngOpenBadge.contollers')
   };
 
   $scope.badgeIsInGroup = function(badge) {
-    return (badge.address in OBSCurrentMeeting.localMembers);
+    return (badge.mac in OBSCurrentMeeting.badgesInMeeting);
   };
 
   $scope.toggleMember = function(badge) {
-    var localBadge = JSON.stringify(badge);
     if ($scope.badgeIsInGroup(badge)) {
-      OBSCurrentMeeting.removeLocalBadge(localBadge);
+      OBSCurrentMeeting.removeLocalBadge(badge);
     } else {
-      OBSCurrentMeeting.addLocalBadge(localBadge);
+      OBSCurrentMeeting.addLocalBadge(badge);
     }
   };
 });

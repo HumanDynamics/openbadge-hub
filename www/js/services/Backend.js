@@ -21,24 +21,26 @@ angular.module('ngOpenBadge.services')
     //  changes project.
 
     var defer = $q.defer();
-
-    $http.get(baseURL() + 'projects').then(
+    console.log("starting longTermRefresh");
+    $http.get(baseURL() + 'projects', {timeout:2000}).then(
       function got_projects(response) {
         if (LOGGING) console.log("got project data:", response);
 
-        OBSMyProject.create(response.data.project);
+        OBSMyProject.create(response.data);
 
-        OBSStorage.cacheProject(response.data.project);
+        OBSStorage.cacheProject(response.data);
         OBSStorage.cacheMemberUpdate(new Date() / 1000.0);
 
         defer.resolve(200);
       },
       function error_projects(response) {
         if (LOGGING) console.log("Ahh! Error getting long term data", response);
+
         if (response.status == 404) {
           BackendInterface.configureHub('new hub');
           defer.reject(404);
         }
+
         var cachedProject = OBSStorage.retrieveProject();
         if (cachedProject) {
           if (LOGGING) console.log("attempting to fill project data from cache", cachedProject);
@@ -47,6 +49,7 @@ angular.module('ngOpenBadge.services')
         } else {
           defer.reject(400);
         }
+
       }
     );
     return defer.promise;
@@ -55,11 +58,12 @@ angular.module('ngOpenBadge.services')
   BackendInterface.shortTermRefresh = function() {
     // perform a partial refresh of just hub data, (SU status, new members)
     var defer = $q.defer();
-
+    console.log("starting shortTermRefresh");
     var lastMemberUpdate = OBSStorage.retrieveMemberUpdate();
     if (!lastMemberUpdate) lastMemberUpdate = 0;
 
     $http.get(baseURL() + OBSMyProject.key + '/hubs', {
+      timeout: 2000,
       headers: {
         'X-LAST-UPDATE': lastMemberUpdate
       }
@@ -79,7 +83,9 @@ angular.module('ngOpenBadge.services')
 
         var cachedHub = OBSStorage.retrieveHub();
         if (cachedHub) {
+
           if (LOGGING) console.log("attempting to fill hub data from cache", cachedHub);
+
           OBSThisHub.create(cachedHub);
         }
 
@@ -89,8 +95,9 @@ angular.module('ngOpenBadge.services')
     return defer.promise;
   };
 
-  // tell the server about this hub's uuid. add to OB-DEFAULT
   BackendInterface.configureHub = function(name) {
+    // tell the server about this hub's uuid. add to OB-DEFAULT
+
     var defer = $q.defer();
     $http({
       url: baseURL() + '0/hubs',
