@@ -1,6 +1,6 @@
 // if at least this amount of time happens between a null signal
 // and a talk signal, they are considered to have started talking.
-var MIN_TALK_LENGTH = 2000;
+var MIN_TALK_LENGTH = 500;
 // If we get no signal for this amount of time, consider them no
 // longer talking.
 var TALK_TIMEOUT = 500;

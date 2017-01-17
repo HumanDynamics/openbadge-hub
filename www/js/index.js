@@ -1,3 +1,4 @@
+window.gitRevision = "df64c0a";
 
 require('q');
 var qbluetoothle = require('./qbluetoothle');
@@ -15,8 +16,9 @@ window.BADGE_SCAN_DURATION = 8000;
 window.WATCHDOG_SLEEP = 5000;
 
 window.LOG_SYNC_INTERVAL = 10 * 1000;
-window.CHART_UPDATE_INTERVAL = 5 * 1000;
+window.CHART_UPDATE_INTERVAL = 5 * 1000; // 5 Seconds
 window.DEBUG_CHART_WINDOW = 1000 * 60 * 5;
+window.DATA_DELAY_INTERVAL = 20 * 1000; // when calculating data, what delay to assume
 
 window.CHECK_BLUETOOTH_STATUS_INTERVAL = 5 * 60 * 1000; //how often to just try to enable bluetooth. separate from the warning system.
 window.CHECK_MEETING_LENGTH_INTERVAL = 3 * 60 * 60 * 1000;
@@ -140,6 +142,7 @@ function Meeting(group, members, type, moderator, description, location) {
     this.description = description;
     this.uuid = device.uuid + "_" + this.startTime.getTime();
     this.log_index = 0
+    this.last_interval_end_date = new Date().getTime() - DATA_DELAY_INTERVAL; // when did we last calaulate  speaking intervals?
 
     this.toPost = []
 
@@ -794,8 +797,11 @@ meetingPage = new Page("meeting",
             var turns = [];
             var totalIntervals = 0;
 
-            var end = new Date().getTime();
-            var start = end - DEBUG_CHART_WINDOW;
+            // Calculate intervals since the last time
+            var end = new Date().getTime() - window.DATA_DELAY_INTERVAL; // now
+            var start = app.meeting.last_interval_end_date;
+            console.log(new Date(start).toUTCString(),new Date(end).toUTCString());
+            app.meeting.last_interval_end_date = end;
 
             // calculate intervals
             var intervals = GroupDataAnalyzer(app.meeting.members,start,end);
