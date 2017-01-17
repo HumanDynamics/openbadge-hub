@@ -1,6 +1,23 @@
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
+window.gitRevision = "76a7ef3";
 window.gitRevision = "df64c0a";
 
 require('q');
+Object.assign = require('object-assign')
+const RhythmClient = require('rhythm-client');
 var qbluetoothle = require('./qbluetoothle');
 var Badge = require('./badge');
 struct = require('./struct.js').struct;
@@ -269,7 +286,24 @@ function Meeting(group, members, type, moderator, description, location) {
         }))
     }.bind(this);
 
-    this.initializeMeeting()
+    /*
+    this.createRhythmMeeting = function() {
+        rc.connect().then(function () {
+            assert(app.rc.connected === true)
+            var meeting = {id: 'meeting-id'}
+            var participants = [{uuid: 'p1uuid', consent: true}, {uuid: 'p2uuid', consent: true}]
+            app.rc.startMeeting(meeting, participants, {}).then(function (result) {
+                if (result) {
+                    console.log("Started a meeting!")
+                }
+            }).catch(function (err) {
+                console.log("something went wrong.")
+            })
+        })
+    }.bind(this);
+    */
+    this.initializeMeeting();
+    //this.createRhythmMeeting();
 
 }
 
@@ -1024,6 +1058,17 @@ app = {
         }
 
         this.initBluetooth();
+
+        // init Rhythm server
+        app.rc = new RhythmClient({
+            serverUrl: 'rhythm-server-development.herokuapp.com',
+            serverEmail: 'heroku-email',
+            serverPassword: 'heroku-password'
+        });
+
+        app.rc.connect().then(function () {
+            console.log("connected to Rhythm server!")
+        });
 
         cordova.plugins.backgroundMode.setDefaults({title:'OpenBadge Meeting', text:'OpenBadge Meeting in Progress'});
 

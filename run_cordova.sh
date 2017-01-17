@@ -9,7 +9,9 @@ echo window.gitRevision = \"$(git rev-parse --short HEAD)\"\; | cat - index.js >
 coffee --compile mm.coffee
 browserify index.js -o bundle.js
 cd ../..
-cordova run --device
+
+echo "Starting Cordova"
+cordova run --device --stacktrace
 
 cd www/js
 
