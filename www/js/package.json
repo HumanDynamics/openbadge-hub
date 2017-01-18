@@ -11,6 +11,7 @@
   "dependencies": {
     "q": "~1.4.1",
     "moment": "~2.13.0",
-    "rhythm-client" : ">=0.0.0"
+    "rhythm-client" : ">=0.0.0",
+    "array.from" : ">=0.0.0"
   }
 }

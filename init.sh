@@ -7,6 +7,9 @@ cordova platform add android
 cd www/js
 npm install
 cd ../../
+
+rm www/js/node_modules/bcryptjs/dist/bcrypt.min.js.gz
+
 npm install -g coffee-script
 npm install -g browserify
 

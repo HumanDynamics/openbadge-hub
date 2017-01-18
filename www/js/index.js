@@ -1,23 +1,9 @@
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "76a7ef3";
-window.gitRevision = "df64c0a";
-
-require('q');
+window.gitRevision = "544615a";
+window.gitRevision = "544615a";
 Object.assign = require('object-assign')
+require('q');
 const RhythmClient = require('rhythm-client');
+Array.from = require('array.from');
 var qbluetoothle = require('./qbluetoothle');
 var Badge = require('./badge');
 struct = require('./struct.js').struct;
@@ -33,13 +19,15 @@ window.BADGE_SCAN_DURATION = 8000;
 window.WATCHDOG_SLEEP = 5000;
 
 window.LOG_SYNC_INTERVAL = 10 * 1000;
-window.CHART_UPDATE_INTERVAL = 5 * 1000; // 5 Seconds
+window.CHART_UPDATE_INTERVAL = 5 * 1000;
 window.DEBUG_CHART_WINDOW = 1000 * 60 * 5;
-window.DATA_DELAY_INTERVAL = 20 * 1000; // when calculating data, what delay to assume
 
 window.CHECK_BLUETOOTH_STATUS_INTERVAL = 5 * 60 * 1000; //how often to just try to enable bluetooth. separate from the warning system.
 window.CHECK_MEETING_LENGTH_INTERVAL = 3 * 60 * 60 * 1000;
 window.CHECK_MEETING_LENGTH_REACTION_TIME = 5 * 60 * 1000;
+
+window.DATA_DELAY_INTERVAL = 20 * 1000; // when calculating data, what delay to assume
+
 
 BATTERY_YELLOW_THRESHOLD = 2.6;
 BATTERY_RED_THRESHOLD = 2.4;
@@ -160,6 +148,7 @@ function Meeting(group, members, type, moderator, description, location) {
     this.uuid = device.uuid + "_" + this.startTime.getTime();
     this.log_index = 0
     this.last_interval_end_date = new Date().getTime() - DATA_DELAY_INTERVAL; // when did we last calaulate  speaking intervals?
+
 
     this.toPost = []
 
@@ -286,24 +275,7 @@ function Meeting(group, members, type, moderator, description, location) {
         }))
     }.bind(this);
 
-    /*
-    this.createRhythmMeeting = function() {
-        rc.connect().then(function () {
-            assert(app.rc.connected === true)
-            var meeting = {id: 'meeting-id'}
-            var participants = [{uuid: 'p1uuid', consent: true}, {uuid: 'p2uuid', consent: true}]
-            app.rc.startMeeting(meeting, participants, {}).then(function (result) {
-                if (result) {
-                    console.log("Started a meeting!")
-                }
-            }).catch(function (err) {
-                console.log("something went wrong.")
-            })
-        })
-    }.bind(this);
-    */
-    this.initializeMeeting();
-    //this.createRhythmMeeting();
+    this.initializeMeeting()
 
 }
 
@@ -998,6 +970,17 @@ app = {
      * Initializations
      */
     initialize: function() {
+        // init Rhythm server
+        app.rc = new RhythmClient({
+             serverUrl: 'rhythm-server-development.herokuapp.com',
+            serverEmail: 'heroku-email',
+            serverPassword: 'heroku-password'
+        });
+
+        app.rc.connect().then(function () {
+            console.log("connected to Rhythm server!")
+        });
+
         //
         // set exploreEnabled to false in the real app, or keep true if we're okay with
         //   SLOANers possibly guessing to type "EXPLORE" into the groupID field
@@ -1059,16 +1042,7 @@ app = {
 
         this.initBluetooth();
 
-        // init Rhythm server
-        app.rc = new RhythmClient({
-            serverUrl: 'rhythm-server-development.herokuapp.com',
-            serverEmail: 'heroku-email',
-            serverPassword: 'heroku-password'
-        });
 
-        app.rc.connect().then(function () {
-            console.log("connected to Rhythm server!")
-        });
 
         cordova.plugins.backgroundMode.setDefaults({title:'OpenBadge Meeting', text:'OpenBadge Meeting in Progress'});
 
