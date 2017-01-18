@@ -13,12 +13,16 @@
     <preference name="orientation" value="portrait" />
     <preference name="KeepRunning" value="true" />
     <access origin="*" />
+    <allow-intent href="ws://*" />
+    <allow-intent href="wss://*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
     <allow-intent href="tel:*" />
     <allow-intent href="sms:*" />
     <allow-intent href="mailto:*" />
     <allow-intent href="geo:*" />
+    <!-- Don't block any requests -->
+    <access origin="*" />
     <platform name="android">
         <allow-intent href="market:*" />
     </platform>
