@@ -1,5 +1,3 @@
-window.gitRevision = "544615a";
-window.gitRevision = "544615a";
 Object.assign = require('object-assign')
 require('q');
 const RhythmClient = require('rhythm-client');
@@ -275,7 +273,25 @@ function Meeting(group, members, type, moderator, description, location) {
         }))
     }.bind(this);
 
-    this.initializeMeeting()
+    this.initRhythmMeeting = function() {
+        console.log("initializing a Rhythm meeting")
+        
+        app.rc.connect().then(function () {
+            var meeting = {id: this.uuid}
+            console.log("Meeting ID",this.uuid)
+            var participants = [{uuid: 'p1uuid', consent: true}, {uuid: 'p2uuid', consent: true}]
+            app.rc.startMeeting(meeting, participants, {}).then(function (result) {
+                if (result) {
+                    console.log("Started a Rhythm meeting!!!")
+                }
+            }).catch(function (err) {
+                console.log("Can't start a Rhythm meeting. something went wrong.",err)
+            })
+        }.bind(this))
+    }.bind(this);
+
+    this.initializeMeeting();
+    this.initRhythmMeeting();
 
 }
 
@@ -972,7 +988,7 @@ app = {
     initialize: function() {
         // init Rhythm server
         app.rc = new RhythmClient({
-             serverUrl: 'rhythm-server-development.herokuapp.com',
+             serverUrl: 'http://rhythm-server-development.herokuapp.com',
             serverEmail: 'heroku-email',
             serverPassword: 'heroku-password'
         });
