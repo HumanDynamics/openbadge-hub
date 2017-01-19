@@ -1,3 +1,7 @@
+window.gitRevision = "00d2559";
+window.gitRevision = "00d2559";
+window.gitRevision = "00d2559";
+window.gitRevision = "00d2559";
 Object.assign = require('object-assign')
 require('q');
 const RhythmClient = require('rhythm-client');
@@ -50,6 +54,52 @@ groupID = "EXPLORE"
 FREE_MEET = true
 VISUALIZATION = true
 
+
+// Polyfill Array find
+// https://tc39.github.io/ecma262/#sec-array.prototype.find
+if (!Array.prototype.find) {
+    Object.defineProperty(Array.prototype, 'find', {
+        value: function(predicate) {
+            // 1. Let O be ? ToObject(this value).
+            if (this == null) {
+                throw new TypeError('"this" is null or not defined');
+            }
+
+            var o = Object(this);
+
+            // 2. Let len be ? ToLength(? Get(O, "length")).
+            var len = o.length >>> 0;
+
+            // 3. If IsCallable(predicate) is false, throw a TypeError exception.
+            if (typeof predicate !== 'function') {
+                throw new TypeError('predicate must be a function');
+            }
+
+            // 4. If thisArg was supplied, let T be thisArg; else let T be undefined.
+            var thisArg = arguments[1];
+
+            // 5. Let k be 0.
+            var k = 0;
+
+            // 6. Repeat, while k < len
+            while (k < len) {
+                // a. Let Pk be ! ToString(k).
+                // b. Let kValue be ? Get(O, Pk).
+                // c. Let testResult be ToBoolean(? Call(predicate, T, « kValue, k, O »)).
+                // d. If testResult is true, return kValue.
+                var kValue = o[k];
+                if (predicate.call(thisArg, kValue, k, o)) {
+                    return kValue;
+                }
+                // e. Increase k by 1.
+                k++;
+            }
+
+            // 7. Return undefined.
+            return undefined;
+        }
+    });
+}
 
 
 /***********************************************************************
@@ -278,8 +328,13 @@ function Meeting(group, members, type, moderator, description, location) {
         
         app.rc.connect().then(function () {
             var meeting = {id: this.uuid}
-            console.log("Meeting ID",this.uuid)
-            var participants = [{uuid: 'p1uuid', consent: true}, {uuid: 'p2uuid', consent: true}]
+            console.log("Rhythm: Meeting ID",this.uuid)
+            var participants = [] //[{uuid: 'p1uuid', consent: true}, {uuid: 'p2uuid', consent: true}]
+            $.each(this.memberKeys, function(index, member) {
+                console.log("Rhythm: adding participant",member)
+                participants.push({uuid: member, consent: true});
+            });
+
             app.rc.startMeeting(meeting, participants, {}).then(function (result) {
                 if (result) {
                     console.log("Started a Rhythm meeting!!!")
@@ -857,6 +912,21 @@ meetingPage = new Page("meeting",
                     turns: turns
                 });
             }
+
+            // sends data to Rhythm
+            $.each(app.meeting.members, function(index, member) {
+                memberIntervals = intervals[index]
+                for (var i = 0; i < memberIntervals.length; i++) {
+                    var interval = memberIntervals[i];
+                    console.log("Rhythm: Sending interval", member.key, interval.startTime, interval.endTime)
+                    app.rc.sendSpeakingEvent(member.key, interval.startTime, interval.endTime)
+                        .then(function (result) {
+                            console.log("speaking object made!", result)
+                        }).catch(function (err) {
+                        console.log("ran into a problem", err)
+                    })
+                }
+            })
 
         },
         createMemberUserList: function() {
