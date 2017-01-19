@@ -1,3 +1,4 @@
+window.gitRevision = "e485c7d";
 window.gitRevision = "00d2559";
 window.gitRevision = "00d2559";
 window.gitRevision = "00d2559";
@@ -327,7 +328,7 @@ function Meeting(group, members, type, moderator, description, location) {
         console.log("initializing a Rhythm meeting")
         
         app.rc.connect().then(function () {
-            var meeting = {id: this.uuid}
+            var meeting = {id: "badgedemo7"}//{id: this.uuid}
             console.log("Rhythm: Meeting ID",this.uuid)
             var participants = [] //[{uuid: 'p1uuid', consent: true}, {uuid: 'p2uuid', consent: true}]
             $.each(this.memberKeys, function(index, member) {
