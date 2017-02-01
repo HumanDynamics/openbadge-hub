@@ -1,2 +1,5 @@
 var APP_KEY = "$*)J#(KD#()#Fj80qf80jq4f*)JFQ$";
 var BASE_URL = "http://openbadegedev2.media.mit.edu/";
+var SERVER_URL = "";
+var SERVER_EMAIL = "";
+var SERVER_PASSWORD = "";

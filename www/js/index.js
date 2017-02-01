@@ -1,3 +1,10 @@
+window.gitRevision = "b7c7ae3";
+window.gitRevision = "b7c7ae3";
+window.gitRevision = "b7c7ae3";
+window.gitRevision = "b7c7ae3";
+window.gitRevision = "b7c7ae3";
+window.gitRevision = "b7c7ae3";
+window.gitRevision = "b7c7ae3";
 window.gitRevision = "e485c7d";
 window.gitRevision = "00d2559";
 window.gitRevision = "00d2559";
@@ -185,7 +192,8 @@ function GroupMember(memberJson) {
  *
  * This is in charge of logging all data to the log file
  */
-function Meeting(group, members, type, moderator, description, location) {
+function Meeting(meetingId, group, members, type, moderator, description, location) {
+    this.meetingId = meetingId;
     this.members = members;
     this.group = group;
     this.type = type;
@@ -328,8 +336,8 @@ function Meeting(group, members, type, moderator, description, location) {
         console.log("initializing a Rhythm meeting")
         
         app.rc.connect().then(function () {
-            var meeting = {id: "badgedemo7"}//{id: this.uuid}
-            console.log("Rhythm: Meeting ID",this.uuid)
+            var meeting = {id: this.meetingId}//{id: this.uuid}
+            console.log("Rhythm: Meeting ID", this.meetingId)
             var participants = [] //[{uuid: 'p1uuid', consent: true}, {uuid: 'p2uuid', consent: true}]
             $.each(this.memberKeys, function(index, member) {
                 console.log("Rhythm: adding participant",member)
@@ -427,8 +435,8 @@ mainPage = new Page("main",
                     navigator.notification.alert("Choose a badge to inspect.");
                     return;
                 }
-
-                app.meeting = new Meeting(app.group, memberList, "", "", "", "");
+                
+                app.meeting = new Meeting("temp", app.group, memberList, "", "", "", "");
                 app.showPage(meetingPage);
                 return;
 
@@ -598,9 +606,10 @@ meetingConfigPage = new Page("meetingConfig",
         $(".startMeetingConfirmButton").click(function() {
             var type = $("#meetingTypeField").val();
             var moderator = $("#mediatorField option:selected").data("key");
+            var meetingId = $("#meetingIdField").val();
             var location = $("#meetingLocationField").val();
             var description = $("#meetingDescriptionField").val();
-            app.meeting = new Meeting(app.group, this.meetingMembers, type, moderator, description, location);
+            app.meeting = new Meeting(meetingId, app.group, this.meetingMembers, type, moderator, description, location);
             app.showPage(meetingPage);
         }.bind(this));
     },
@@ -1059,9 +1068,9 @@ app = {
     initialize: function() {
         // init Rhythm server
         app.rc = new RhythmClient({
-             serverUrl: 'http://rhythm-server-development.herokuapp.com',
-            serverEmail: 'heroku-email',
-            serverPassword: 'heroku-password'
+            serverUrl: SERVER_URL,
+            serverEmail: SERVER_EMAIL,
+            serverPassword: SERVER_PASSWORD
         });
 
         app.rc.connect().then(function () {
@@ -1271,22 +1280,22 @@ app = {
     },
 
     registerAsNewHub: function() {
-      $.ajax({
-              url: BASE_URL + 0 +"/hubs",
-              type:"PUT",
-              dataType:"json",
-              beforeSend: function(xhr){
-                  xhr.setRequestHeader('X-LAST-MEMBER-UPDATE', 0)
-                  xhr.setRequestHeader("X-APPKEY", APP_KEY)
-                  xhr.setRequestHeader("X-HUB-UUID", device.uuid)
-              },
-              success: function(result) {
+        $.ajax({
+            url: BASE_URL + 0 +"/hubs",
+            type:"PUT",
+            dataType:"json",
+            beforeSend: function(xhr){
+                xhr.setRequestHeader('X-LAST-MEMBER-UPDATE', 0)
+                xhr.setRequestHeader("X-APPKEY", APP_KEY)
+                xhr.setRequestHeader("X-HUB-UUID", device.uuid)
+            },
+            success: function(result) {
                 console.log(result)
 
-              },
-              error: function(error) {
-              }
-          });
+            },
+            error: function(error) {
+            }
+        });
     },
 
     /**
@@ -1299,13 +1308,13 @@ app = {
     },
     getCompletedMeetings: function(callback) {
         if (app.project) {
-          $.ajax({
-              url: BASE_URL + app.project.key +"/hubs",
-              type:"GET",
-              beforeSend: function(xhr){
-                  xhr.setRequestHeader('X-LAST-MEMBER-UPDATE', new Date()/1000);
-                  xhr.setRequestHeader("X-APPKEY", APP_KEY);
-                  xhr.setRequestHeader("X-HUB-UUID", device.uuid);
+            $.ajax({
+                url: BASE_URL + app.project.key +"/hubs",
+                type:"GET",
+                beforeSend: function(xhr){
+                    xhr.setRequestHeader('X-LAST-MEMBER-UPDATE', new Date()/1000);
+                    xhr.setRequestHeader("X-APPKEY", APP_KEY);
+                    xhr.setRequestHeader("X-HUB-UUID", device.uuid);
               },
               dataType:"json",
               success: function(result) {
