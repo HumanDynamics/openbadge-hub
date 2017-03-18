@@ -6,7 +6,15 @@
 
 
   <ion-content>
-
+    <div class="content-center">
+      <div ng-repeat="(n, d) in data" class="card">
+        {{n}}
+        <canvas id="line" class="chart chart-line" chart-data="data[n]"
+                chart-labels="labels[n]" chart-series="series" chart-options="options"
+                chart-dataset-override="datasetOverride">
+        </canvas>
+      </div>
+    </div>
   </ion-content>
 
   <div class="bar bar-footer bar-balanced start-button" ng-click="leaveMeeting()">

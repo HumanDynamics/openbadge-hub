@@ -7,8 +7,8 @@ angular.module('ngOpenBadge.services')
 .factory('OBSThisHub', function() {
   var ThisHub = {
     name: "",
-    lastLogUpdates: {},
-    su: false
+    meetings: {},
+    is_god: false
   };
 
   var LOGGING = true;
@@ -17,8 +17,16 @@ angular.module('ngOpenBadge.services')
     if (LOGGING) console.log("giving my hub data:", data);
 
     ThisHub.name = data.name;
-    ThisHub.lastLogUpdates = data.last_log_updates;
-    ThisHub.su = data.su;
+    ThisHub.su = data.is_god;
+
+    for (var uuid in data.meetings) {
+      var recieved = data.meetings[uuid]
+      ThisHub.meetings[uuid] = {
+        isComplete: recieved.is_complete,
+        lastLogSerial: recieved.last_log_serial,
+        lastLogTimestamp: recieved.last_log_timestamp
+      }
+    }
   };
 
   return ThisHub;

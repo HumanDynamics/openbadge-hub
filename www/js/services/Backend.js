@@ -7,7 +7,7 @@ We also interface with OBSStorage in order to fill requests when disconnected fo
 
 angular.module('ngOpenBadge.services')
 
-.factory('OBSBackend', function($http, $q, OBSThisHub, OBPrivate, OBSMyProject, OBSStorage) {
+.factory('OBSBackend', function($http, $q, OBSThisHub, OBPrivate, OBSMyProject, OBSStorage, $cordovaFile, $timeout) {
   var BackendInterface = {};
   var baseURL = function() {
     return OBPrivate.BASE_URL;
@@ -120,25 +120,58 @@ angular.module('ngOpenBadge.services')
   };
 
   // create the empty meeting object
-  BackendInterface.initMeeting = function(meetingUUID) {
-    return $http({
-      url: baseURL() + OBSMyProject.key + "/meetings",
-      method: 'PUT',
-      headers: {
-        'X-MEETING-UUID': meetingUUID,
-        'X-LOG-VERSION': '2.1'
-      }
-    });
+  BackendInterface.initMeeting = function(uuid) {
+    var defer = $q.defer();
+
+    console.log($cordovaFile.readAsText(cordova.file.externalDataDirectory, uuid + ".txt"));
+    var win = function (r) {
+        console.log("Code = " + r.responseCode);
+        console.log("Response = " + r.response);
+        console.log("Sent = " + r.bytesSent);
+        defer.resolve()
+    }
+
+    var fail = function (error) {
+        console.log("upload error source " + error.source);
+        console.log("upload error target " + error.target);
+        console.log(error);
+        defer.reject();
+    }
+
+    var fileURL = cordova.file.externalDataDirectory + uuid + ".txt"
+
+    var options = new FileUploadOptions();
+    options.fileKey = "file";
+    options.fileName = fileURL.substr(fileURL.lastIndexOf('/') + 1);
+    options.mimeType = "text/plain";
+    options.headers = {"X-APPKEY": OBPrivate.APP_KEY, "X-HUB-UUID": OBPrivate.DEVICE_UUID};
+    options.httpMethod = "PUT";
+
+    var params = {isComplete: false};
+
+    options.params = params;
+
+    var ft = new FileTransfer();
+
+    ft.upload(fileURL, encodeURI(OBPrivate.BASE_URL + OBSMyProject.key + "/meetings"), win, fail, options);
+
+    return defer.promise;
   };
 
   // add events to an existing meeting
   BackendInterface.postEvents = function(events, meetingUUID) {
     if (LOGGING) console.log("posting", events, "from", meetingUUID);
-    return $http.post(baseURL() + OBSMyProject.key + "/meetings", events, {
-      headers: {
-        'X-MEETING-UUID': meetingUUID
-      }
-    });
+    var toPost = {
+      chunks: JSON.stringify(events.map(function (str) {
+        return JSON.stringify(str) + '\n';
+      })),
+      uuid: meetingUUID
+    }
+    return $http.post(
+      baseURL() + OBSMyProject.key + "/meetings",
+      toPost,
+      { headers: { 'X-MEETING-UUID': meetingUUID } }
+    );
   };
 
   return BackendInterface;

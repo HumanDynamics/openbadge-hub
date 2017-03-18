@@ -45,6 +45,24 @@ angular.module('ngOpenBadge.services')
   };
 
 
+  // SorageService.initializeLogFile = function(meeting) {
+  //   window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fs) {
+  //
+  //     console.log('file system open: ' + fs.name);
+  //     fs.root.getFile(meeting.UUID + ".txt", { create: true, exclusive: false }, function (fileEntry) {
+  //
+  //         console.log("fileEntry is file?" + fileEntry.isFile.toString());
+  //         // fileEntry.name == 'someFile.txt'
+  //         // fileEntry.fullPath == '/someFile.txt'
+  //         writeFile(fileEntry, null);
+  //
+  //
+  //     }, null);
+  //   }, null);
+  // }
+
+  // StorageService
+
   // store chunks to memory. right now this just puts them in
   //  local storage, in the future should store to WebSQL or something
   StorageService.saveChunks = function (chunks, meetingUUID) {

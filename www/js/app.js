@@ -5,19 +5,19 @@
 // the 2nd parameter is an array of 'requires'
 // 'starter.services' is found in services.js
 // 'starter.controllers' is found in controllers.js
-angular.module('ngOpenBadge', ['ionic', 'ngCordova', 'ngOpenBadge.contollers', 'ngOpenBadge.services', 'ngOpenBadge.private'])
+angular.module('ngOpenBadge', ['chart.js', 'ionic', 'ngCordova', 'ngOpenBadge.contollers', 'ngOpenBadge.services', 'ngOpenBadge.private'])
 
 .run(function($ionicPlatform, $cordovaDevice, OBSBluetooth, OBPrivate, $http) {
 
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
-    // for form inputs)
+    // for form inputs
 
     var uuid = "browser";
     try {
       uuid = $cordovaDevice.getUUID();
     } catch (ex) {
-
+      console.log(ex);
     }
 
     console.log("settinge device uuid to:", uuid);

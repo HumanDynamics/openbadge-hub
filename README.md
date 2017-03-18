@@ -6,7 +6,7 @@ where they may interface with other `RoundTable Hub` platforms.
 
 ### Running locally
 
-There are a variey of oprions avaiable for local testing.
+There are a variety of options available for local testing.
 
 Testing on-computer:
 - `ionic serve` creates a live reload app and opens in in your default browser.
@@ -30,8 +30,7 @@ We use the `SCSS` preprocess for styling.
 
 #### Style
 
-We use predominantly `camelCase`, however callback functions, particualrily those for
+We use predominantly `camelCase`, however callback functions, particularly those for
 promises, are to be `snake_case`.
 
 Committed files should pass jshint and be `atom-beautify`'d.
-

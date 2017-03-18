@@ -1,6 +1,6 @@
 angular.module('ngOpenBadge.contollers')
 
-.controller('GroupViewCtrl', function($scope, $state, $timeout, $q,
+.controller('GroupViewCtrl', function($scope, $state, $timeout, $interval, $q,
   OBSBluetooth, OBSBackend, OBSCurrentMeeting, OBSMyProject, OBSThisHub,
   $ionicSideMenuDelegate) {
 
@@ -10,6 +10,10 @@ angular.module('ngOpenBadge.contollers')
   $scope.projectKey = "";
 
   $scope.discoveredBadges = {};
+
+  $scope.noFoundBadges = function () {
+    return Object.keys($scope.discoveredBadges).length === 0;
+  }
 
   $scope.$on('$ionicView.afterEnter', function(event) {
     $ionicSideMenuDelegate.canDragContent(false);
@@ -37,7 +41,7 @@ angular.module('ngOpenBadge.contollers')
         $scope.projectName = OBSMyProject.name;
         $scope.hubName = OBSThisHub.name;
         $scope.projectKey = OBSMyProject.key;
-
+ 
         $scope.$broadcast('scroll.refreshComplete');
         });
   };
@@ -80,7 +84,7 @@ angular.module('ngOpenBadge.contollers')
 
         } else {
           $scope.discoveredBadges[badge.mac] = badge;
-          console.log("found new badge:", badge);
+          console.log("found new badge:", badge.address, badge);
           // give ourselves a little more time
           $scope.resetTimer(10000);
         }
