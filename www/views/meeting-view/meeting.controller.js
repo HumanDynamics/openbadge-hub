@@ -1,31 +1,50 @@
 angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($scope, $interval, OBSBluetooth, OBSBackend, OBSCurrentMeeting) {
 
-  $scope.historyLength = 2*60;
+  $scope.historyLength = 2 * 60;
 
   $scope.$on('$ionicView.enter', function(e) {
     OBSCurrentMeeting.start();
 
-    OBSCurrentMeeting.onDataUpdate = function (member) {
-      $scope.data[member.name] = [[]]
+    $scope.shiftInterval = $interval( function () {
+      var members = Object.keys($scope.data);
+      for(var i = 0; i < members.length; i++) {
+        var memberName = members[i];
+        var memberData = $scope.data[memberName][0]
+
+        if (memberData[memberData.length - 1] === 0) {
+          $scope.data[memberName][0].pop()
+          $scope.labels[memberName].pop()
+        }
+
+        $scope.data[memberName][0].push(0)
+        $scope.labels[memberName].push(new Date()/1)
+      }
+    }, 1000)
+
+    OBSCurrentMeeting.onDataUpdate = function(member) {
+      $scope.data[member.name] = [
+        []
+      ]
       $scope.labels[member.name] = []
 
-      var maxTime = new Date()/1000; //Math.max.apply(Object.keys(member.samples))
+      var maxTime = new Date() / 1000; //Math.max.apply(Object.keys(member.samples))
       var minTime = maxTime - $scope.historyLength;
 
       for (time in member.samples) {
-        console.log(time, minTime);
         if (parseFloat(time) > minTime) {
           $scope.data[member.name][0].push(member.samples[time])
-          $scope.labels[member.name].push(time*1000)
-        } else {
-          console.log("Purging chunk");
+          $scope.labels[member.name].push(time * 1000);
         }
       }
+      $scope.data[member.name][0].push(0)
+      $scope.labels[member.name].push(maxTime * 1000)
+
     }
   });
 
   $scope.leaveMeeting = function() {
     $interval.cancel($scope.dataCollectionInterval);
+    $interval.cancel($scope.shiftInterval);
     OBSCurrentMeeting.leave("manual");
   };
 
@@ -50,7 +69,7 @@ angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($sco
           position: 'left',
           ticks: {
             beginAtZero: true,
-            max: 128,
+            max: 200
           }
         }
       ]

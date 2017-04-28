@@ -3,11 +3,7 @@ Data about our current meeting, including methods to stire data to the meeting,
   interact with the badges of the meeting, and persist meeting data
   */
 
-
-angular.module('ngOpenBadge.services')
-
-.factory('OBSCurrentMeeting', function(OBSBackend, OBSMyProject, OBSBluetooth, OBSStorage, OBSThisHub, OBPrivate,
-  $q, $timeout, $interval, $cordovaFile) {
+angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBSBackend, OBSMyProject, OBSBluetooth, OBSStorage, OBSThisHub, OBPrivate, $q, $timeout, $interval, $cordovaFile) {
   var CurrentMeeting = {};
 
   CurrentMeeting.events = [];
@@ -29,20 +25,17 @@ angular.module('ngOpenBadge.services')
     // var logText = JSON.stringify(CurrentMeeting.events);
     console.log("Writing out to log file");
     var defer = $q.defer();
-    $cordovaFile.writeFile(cordova.file.externalDataDirectory, CurrentMeeting.uuid + ".txt", logText, true).then(
-      function (success) {
-        defer.resolve()
-      },
-      function (error) {
-        defer.reject()
-      }
-    );
+    $cordovaFile.writeFile(cordova.file.externalDataDirectory, CurrentMeeting.uuid + ".txt", logText, true).then(function(success) {
+      defer.resolve()
+    }, function(error) {
+      defer.reject()
+    });
     return defer.promise;
   };
 
-  CurrentMeeting.chunkLogger = function (chunk, type) {
+  CurrentMeeting.chunkLogger = function(chunk, type) {
     var newChunk = {
-      type:type,
+      type: type,
       log_timestamp: new Date() / 1000.0,
       log_index: CurrentMeeting.logIndex++,
       hub: OBPrivate.DEVICE_UUID,
@@ -54,13 +47,13 @@ angular.module('ngOpenBadge.services')
     if (type === "audio recieved") {
       var avgBySecond = {};
       var innerChunkDivisions = 2
-      var chunksize = 114/innerChunkDivisions
-      for (var i = 0; i < 114; i+= chunksize) {
+      var chunksize = 114 / innerChunkDivisions
+      for (var i = 0; i < 114; i += chunksize) {
         var sum = 0;
-        for (var j = i; j < i+chunksize; j++) {
+        for (var j = i; j < i + chunksize; j++) {
           sum += chunk.samples[j]
         }
-        avgBySecond[chunk.timestamp + i * 0.05] = sum/chunksize
+        avgBySecond[chunk.timestamp + i * 0.05] = sum / chunksize
       }
       for (time in avgBySecond) {
         CurrentMeeting.data[chunk.badge_address].samples[time] = avgBySecond[time]
@@ -83,7 +76,7 @@ angular.module('ngOpenBadge.services')
     CurrentMeeting.data[badge.mac] = null;
     if (badge.mac in CurrentMeeting.badgesInMeeting)
       delete CurrentMeeting.badgesInMeeting[badge.mac];
-  };
+    };
 
   // add events for all the member/hub joins, tell our badges to start recodring,
   //   start logging event data to server.
@@ -92,17 +85,19 @@ angular.module('ngOpenBadge.services')
     CurrentMeeting.uuid = OBPrivate.DEVICE_UUID + "_" + now.toString();
     CurrentMeeting.logIndex = 0;
 
-    CurrentMeeting.events = [{
-      type: "meeting started",
-      log_timestamp: now,
-      hub: OBPrivate.DEVICE_UUID,
-      log_index: CurrentMeeting.logIndex++,
-      data: {
-        log_version: "2.1",
-        uuid: CurrentMeeting.uuid,
-        start_time: new Date()/1000
+    CurrentMeeting.events = [
+      {
+        type: "meeting started",
+        log_timestamp: now,
+        hub: OBPrivate.DEVICE_UUID,
+        log_index: CurrentMeeting.logIndex++,
+        data: {
+          log_version: "2.1",
+          uuid: CurrentMeeting.uuid,
+          start_time: new Date() / 1000
+        }
       }
-    }];
+    ];
 
     var split = new Date().toString().split(" ");
     var timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
@@ -118,7 +113,7 @@ angular.module('ngOpenBadge.services')
     });
 
     var chunkLogger = function(badge) {
-      return function (chunk, type) {
+      return function(chunk, type) {
         chunk.member = badge.key;
         chunk.badge_address = badge.mac;
 
@@ -144,15 +139,11 @@ angular.module('ngOpenBadge.services')
       OBSBluetooth.initializeBadgeBluetooth(member);
     }
 
-    CurrentMeeting.writeLog()
-    .then(function () {
+    CurrentMeeting.writeLog().then(function() {
       OBSBackend.initMeeting(CurrentMeeting.uuid);
-    })
-    .then(function () {
+    }).then(function() {
       CurrentMeeting.postInterval = $interval(function() {
-        CurrentMeeting.writeLog()
-          .then(OBSBackend.shortTermRefresh)
-          .then(CurrentMeeting.postEvents);
+        CurrentMeeting.writeLog().then(OBSBackend.shortTermRefresh).then(CurrentMeeting.postEvents);
       }, 10000);
     });
   };
@@ -180,18 +171,14 @@ angular.module('ngOpenBadge.services')
       return defer.promise;
     }
     console.log("Now uploading", toUpload);
-    OBSBackend.postEvents(toUpload,
-      CurrentMeeting.uuid).then(
-      function(success) {
-        console.log("Success", success);
-        defer.resolve();
-      },
-      function(error) {
-        console.error(error);
-        OBSStorage.saveChunks(toUpload, CurrentMeeting.uuid);
-        defer.reject(error);
-      }
-    );
+    OBSBackend.postEvents(toUpload, CurrentMeeting.uuid).then(function(success) {
+      console.log("Success", success);
+      defer.resolve();
+    }, function(error) {
+      console.error(error);
+      OBSStorage.saveChunks(toUpload, CurrentMeeting.uuid);
+      defer.reject(error);
+    });
 
     return defer.promise;
   };
