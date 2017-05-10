@@ -1,6 +1,8 @@
 /*
 * We use the previous version of the analysis package without modification in order to ensure
 * correctness.
+*
+* Ideally this all should at the very minimum be wrapped in an angular service-like package.
 */
 
 // if at least this amount of time happens between a null signal
@@ -35,8 +37,10 @@ var NOISE_POWER_THRESHOLD = 42; // experimental threshold
 
 window.ENABLE_DATA_LOGGING = true;
 
-Array.prototype.min = function() {
-  return Math.min.apply(null, this);
+// Standalone function instead of prototype, because we don't modify objects which we do not own.
+// More concretely, adding a min function to the array prototype breaks the FileTransfer object in a highly non-obvious way.
+function arrayMin (arr) {
+  return Math.min.apply(null, arr);
 };
 
 // do two given time intervals intersect?
@@ -276,7 +280,7 @@ function MinArray(numSamples) {
         samplesArray[pos] = vol;
         pos = (pos +1) % numSamples;
 
-        return samplesArray.min();
+        return arrayMin(samplesArray);
     }.bind(this);
 }
 
