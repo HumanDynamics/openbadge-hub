@@ -5,6 +5,22 @@ angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($sco
   $scope.$on('$ionicView.enter', function(e) {
     OBSCurrentMeeting.start();
 
+
+    var $mmVis = $("#meeting-mediator");
+    $mmVis.empty();
+    $scope.mm = null;
+    $scope.mm = new MM({
+            participants: app.meeting.memberKeys,
+            names: app.meeting.memberInitials,
+            transitions: 0,
+            turns: []
+        },
+        app.meeting.moderator,
+        $mmVis.width(),
+        $mmVis.height());
+    $scope.mm.render('#meeting-mediator');
+
+
     $scope.shiftInterval = $interval( function () {
       var members = Object.keys($scope.data);
       for(var i = 0; i < members.length; i++) {
@@ -26,6 +42,15 @@ angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($sco
         []
       ]
       $scope.labels[member.name] = []
+
+      if ($scope.mm) {
+          $scope.mm.updateData({
+              participants: app.meeting.memberKeys,
+              names: app.meeting.memberInitials,
+              transitions: 0,
+              turns: turns
+          });
+      }
 
       var maxTime = new Date() / 1000; //Math.max.apply(Object.keys(member.samples))
       var minTime = maxTime - $scope.historyLength;

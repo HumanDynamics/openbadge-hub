@@ -3,7 +3,9 @@ Data about our current meeting, including methods to stire data to the meeting,
   interact with the badges of the meeting, and persist meeting data
   */
 
-angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBSBackend, OBSMyProject, OBSBluetooth, OBSStorage, OBSThisHub, OBPrivate, $q, $timeout, $interval, $cordovaFile) {
+angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBSBackend, OBSMyProject, OBSBluetooth,
+                                                                             OBSStorage, OBSThisHub, OBPrivate,
+                                                                             OBSAnalysis, $q, $timeout, $interval, $cordovaFile) {
   var CurrentMeeting = {};
 
   CurrentMeeting.events = [];
@@ -55,7 +57,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
     }
     var end = new Date().getTime();
     var start = end - 1000 * 60 * 5;
-    intervals = new GroupDataAnalyzer(getObjectVals(CurrentMeeting.badgesInMeeting), start, end);
+    intervals = new OBSAnalysis.GroupDataAnalyzer(getObjectVals(CurrentMeeting.badgesInMeeting), start, end);
     console.log("Got intervals: ", intervals);
 
     if (type === "audio recieved") {
@@ -79,7 +81,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
   };
 
   CurrentMeeting.addLocalBadge = function(badge) {
-    badge.dataAnalyzer = new DataAnalyzer();
+    badge.dataAnalyzer = new OBSAnalysis.DataAnalyzer();
 
     CurrentMeeting.badgesInMeeting[badge.mac] = badge;
     CurrentMeeting.data[badge.mac] = {
