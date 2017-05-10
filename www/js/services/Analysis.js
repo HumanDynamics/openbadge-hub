@@ -69,13 +69,12 @@ function DataAnalyzer() {
     }.bind(this);
 
     this.addChunk = function (chunk) {
-        var startTime = chunk.ts;
-        var startTimeMs = chunk.ts_ms; // start time is a combination of timestamp and fractional part (ms)
-        var sampleDuration = chunk.sampleDelay;
+        var startTime = chunk.timestamp;
+        var sampleDuration = chunk.samplePeriod;
         var samples = chunk.samples;
         var analyzer = this;
         $.each(samples, function (i, volume) {
-            analyzer.addSample(volume, startTime * 1000 + startTimeMs + sampleDuration * i, sampleDuration);
+            analyzer.addSample(volume, startTime * 1000 + sampleDuration * i, sampleDuration);
         });
 
     }.bind(this);

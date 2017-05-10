@@ -44,6 +44,20 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
 
     CurrentMeeting.events.push(newChunk);
 
+    var getObjectVals = function(obj) {
+      var vals = [];
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          vals.push(obj[key]);
+        }
+      }
+      return vals;
+    }
+    var end = new Date().getTime();
+    var start = end - 1000 * 60 * 5;
+    intervals = new GroupDataAnalyzer(getObjectVals(CurrentMeeting.badgesInMeeting), start, end);
+    console.log("Got intervals: ", intervals);
+
     if (type === "audio recieved") {
       var avgBySecond = {};
       var innerChunkDivisions = 2
@@ -65,6 +79,8 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
   };
 
   CurrentMeeting.addLocalBadge = function(badge) {
+    badge.dataAnalyzer = new DataAnalyzer();
+
     CurrentMeeting.badgesInMeeting[badge.mac] = badge;
     CurrentMeeting.data[badge.mac] = {
       name: badge.owner,
@@ -73,6 +89,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
   };
 
   CurrentMeeting.removeLocalBadge = function(badge) {
+    badge.dataAnalyzer.clearData();
     CurrentMeeting.data[badge.mac] = null;
     if (badge.mac in CurrentMeeting.badgesInMeeting)
       delete CurrentMeeting.badgesInMeeting[badge.mac];
@@ -116,7 +133,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
       return function(chunk, type) {
         chunk.member = badge.key;
         chunk.badge_address = badge.mac;
-
+        badge.dataAnalyzer.addChunk(chunk);
         console.log("Logged a <<", type, ">> from time:", chunk.timestamp, "from", chunk.badge_address);
         CurrentMeeting.chunkLogger(chunk, type);
       };
