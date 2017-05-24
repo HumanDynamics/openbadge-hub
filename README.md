@@ -16,7 +16,7 @@ The following steps wokred in getting as working dev copy from a factory-fresh m
 - Run `npm install -g cordova`
 - Run `npm install`
 - Run `ionic platform add android`
-- Run `cp www/js.private.js.template www/js.private.js`
+- Run `cp www/js/private.js.template www/js/private.js`
 - Insert APP_KEY into appropriate field. 
 - Run `ionic run android --device`
 
