@@ -1,4 +1,4 @@
-angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($scope, $interval, OBSBluetooth, OBSBackend, OBSCurrentMeeting) {
+angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($scope, $state, $ionicHistory, $interval, OBSBluetooth, OBSBackend, OBSCurrentMeeting) {
 
   $scope.historyLength = 2 * 60;
 
@@ -6,19 +6,19 @@ angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($sco
     OBSCurrentMeeting.start();
 
 
-    var $mmVis = $("#meeting-mediator");
-    $mmVis.empty();
-    $scope.mm = null;
-    $scope.mm = new MM({
-            participants: app.meeting.memberKeys,
-            names: app.meeting.memberInitials,
-            transitions: 0,
-            turns: []
-        },
-        app.meeting.moderator,
-        $mmVis.width(),
-        $mmVis.height());
-    $scope.mm.render('#meeting-mediator');
+    // var $mmVis = $("#meeting-mediator");
+    // $mmVis.empty();
+    // $scope.mm = null;
+    // $scope.mm = new MM({
+    //         participants: app.meeting.memberKeys,
+    //         names: app.meeting.memberInitials,
+    //         transitions: 0,
+    //         turns: []
+    //     },
+    //     app.meeting.moderator,
+    //     $mmVis.width(),
+    //     $mmVis.height());
+    // $scope.mm.render('#meeting-mediator');
 
 
     $scope.shiftInterval = $interval( function () {
@@ -68,9 +68,14 @@ angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($sco
   });
 
   $scope.leaveMeeting = function() {
-    $interval.cancel($scope.dataCollectionInterval);
     $interval.cancel($scope.shiftInterval);
     OBSCurrentMeeting.leave("manual");
+    console.log("left meeting");
+
+    $ionicHistory.nextViewOptions({
+      disableBack: true
+    });
+    $state.go('app.group');
   };
 
   $scope.labels = {};

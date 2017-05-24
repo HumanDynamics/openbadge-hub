@@ -80,7 +80,7 @@ angular.module('ngOpenBadge.contollers')
   };
 
   $scope.badgeIsInGroup = function(badge) {
-    return (badge.address in OBSCurrentMeeting.localMembers);
+    return (badge.address in OBSCurrentMeeting.badgesInMeeting);
   };
 
   $scope.toggleMember = function(badge) {
@@ -89,6 +89,7 @@ angular.module('ngOpenBadge.contollers')
       OBSCurrentMeeting.removeLocalBadge(localBadge);
     } else {
       OBSCurrentMeeting.addLocalBadge(localBadge);
+      OBSCurrentMeeting.initNewMember(localBadge.mac);
     }
   };
 });

@@ -5,7 +5,7 @@ Data about our current meeting, including methods to stire data to the meeting,
 
 angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBSBackend, OBSMyProject, OBSBluetooth,
                                                                              OBSStorage, OBSThisHub, OBPrivate,
-                                                                             OBSAnalysis, $q, $timeout, $interval, $cordovaFile) {
+                                                                             OBSAnalysis, $q, $timeout, $interval) {
   var CurrentMeeting = {};
 
   CurrentMeeting.events = [];
@@ -26,13 +26,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
     }
     // var logText = JSON.stringify(CurrentMeeting.events);
     console.log("Writing out to log file");
-    var defer = $q.defer();
-    $cordovaFile.writeFile(cordova.file.externalDataDirectory, CurrentMeeting.uuid + ".txt", logText, true).then(function(success) {
-      defer.resolve()
-    }, function(error) {
-      defer.reject()
-    });
-    return defer.promise;
+    return OBSStorage.writeToFile(CurrentMeeting.uuid + ".txt", logText);
   };
 
   CurrentMeeting.chunkLogger = function(chunk, type) {
@@ -131,31 +125,9 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
       }
     });
 
-    var chunkLogger = function(badge) {
-      return function(chunk, type) {
-        chunk.member = badge.key;
-        chunk.badge_address = badge.mac;
-        badge.dataAnalyzer.addChunk(chunk);
-        console.log("Logged a <<", type, ">> from time:", chunk.timestamp, "from", chunk.badge_address);
-        CurrentMeeting.chunkLogger(chunk, type);
-      };
-    };
-
     for (var member in CurrentMeeting.badgesInMeeting) {
       member = CurrentMeeting.badgesInMeeting[member];
-
-      member.onChunkCompleted = chunkLogger(member);
-
-      CurrentMeeting.events.push({
-        type: "member joined",
-        log_timestamp: new Date() / 1000,
-        log_index: CurrentMeeting.logIndex++,
-        data: {
-          badge_address: member.address,
-          key: member.key
-        }
-      });
-      OBSBluetooth.initializeBadgeBluetooth(member);
+      CurrentMeeting.initNewMember(member);
     }
 
     CurrentMeeting.writeLog().then(function() {
@@ -167,9 +139,44 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
     });
   };
 
+
+  CurrentMeeting.initNewMember = function(member) {
+    var chunkLogger = function(badge) {
+      return function(chunk, type) {
+        chunk.member = badge.key;
+        chunk.badge_address = badge.mac;
+        badge.dataAnalyzer.addChunk(chunk);
+        console.log("Logged a <<", type, ">> from time:", chunk.timestamp, "from", chunk.badge_address);
+        CurrentMeeting.chunkLogger(chunk, type);
+      };
+    };
+
+    // member = CurrentMeeting.badgesInMeeting[member];
+
+    member.onChunkCompleted = chunkLogger(member);
+
+    CurrentMeeting.events.push({
+      type: "member joined",
+      log_timestamp: new Date() / 1000,
+      log_index: CurrentMeeting.logIndex++,
+      data: {
+        badge_address: member.address,
+        key: member.key
+      }
+    });
+    OBSBluetooth.initializeBadgeBluetooth(member);
+  }
+
   // uplaod a final chunk telling the server that we're done. stop the uploads.
   CurrentMeeting.leave = function(reason) {
     $interval.cancel(CurrentMeeting.postInterval);
+
+    for (var member in CurrentMeeting.badgesInMeeting) {
+      _member = CurrentMeeting.badgesInMeeting[member];
+      OBSBluetooth.endConnection(_member);
+      console.log("Ended connection to", _member);
+      delete CurrentMeeting.badgesInMeeting[member]
+    }
 
     CurrentMeeting.events.push({
       type: "hub left",

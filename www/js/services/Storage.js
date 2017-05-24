@@ -8,7 +8,7 @@ Watch out becuase localStorage can't accept more than like 5MB or something.
 
 angular.module('ngOpenBadge.services')
 
-.factory('OBSStorage', function() {
+.factory('OBSStorage', function($cordovaFile) {
   var StorageService = {};
   var projectKey = "projectKey";
   var hubKey = "hubKey";
@@ -73,7 +73,7 @@ angular.module('ngOpenBadge.services')
     newChunksToUpload = previous.concat(chunks);
     storage.setItem(meetingUUID, JSON.stringify(newChunksToUpload));
 
-
+    // save this meeting as one which needs to be later uploaded
     var toUpload = storage.getItem(toUploadKey);
     toUpload = toUpload || '{}';
     toUpload = JSON.parse(toUpload);
@@ -82,6 +82,11 @@ angular.module('ngOpenBadge.services')
 
     storage.setItem(toUploadKey, JSON.stringify(toUpload));
   };
+
+  // append the given contents to a file in Cordova External Data Directory
+  StorageService.writeToFile = function(name, contents) {
+    return $cordovaFile.writeFile(cordova.file.externalDataDirectory, name, contents, true);
+  }
 
   return StorageService;
 });

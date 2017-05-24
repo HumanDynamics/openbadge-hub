@@ -403,6 +403,13 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
     });
   };
 
+  BluetoothFactory.endConnection = function(badge) {
+    return $cordovaBluetoothLE.close({address: badge.address})
+      .then( function() {
+      console.log("Closed connection to", badge);
+      })
+  }
+
   // create badge's onSubscribe function, which parses subscription data
   BluetoothFactory.configureOnSubscribe = function(badge) {
 
