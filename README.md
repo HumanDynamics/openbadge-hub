@@ -6,6 +6,23 @@ where they may interface with other `RoundTable Hub` platforms.
 
 ### Running locally
 
+#### Installation
+The following steps wokred in getting as working dev copy from a factory-fresh macOS Sierra.
+- Install the "should come built in" stuff. (git, brew, node+npm)
+- Download and Install Oracle's [JDK](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+- Download [Andriod Studio](https://developer.android.com/studio/index.html), and install it using the defualt settings.
+- Clone this repository, and cd into it
+- Run `npm install -g ionic@2.2.1`
+- Run `npm install -g cordova`
+- Run `npm install`
+- Run `ionic platform add android`
+- Run `cp www/js.private.js.template www/js.private.js`
+- Insert APP_KEY into appropriate field. 
+- Run `ionic run android --device`
+
+
+
+#### Use
 There are a variety of options available for local testing.
 
 Testing on-computer:
@@ -14,7 +31,7 @@ Testing on-computer:
  Primarily useful for layout and styling.
 
  - `ionic run android --device` will attempt to run the app on a connected android device `-l` or `-r` can
- be used to create a live reload server for testing.
+ be used to create a live reload server for testing (this requires proper handling of CORS stuff, which may or may not be implemented depending on the backend).
 
 
 #### Layout
