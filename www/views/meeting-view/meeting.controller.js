@@ -5,20 +5,39 @@ angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($sco
   $scope.$on('$ionicView.enter', function(e) {
     OBSCurrentMeeting.start();
 
+    $scope.memberKeys = []
+    $scope.memberNames = []
 
-    // var $mmVis = $("#meeting-mediator");
-    // $mmVis.empty();
-    // $scope.mm = null;
-    // $scope.mm = new MM({
-    //         participants: app.meeting.memberKeys,
-    //         names: app.meeting.memberInitials,
-    //         transitions: 0,
-    //         turns: []
-    //     },
-    //     app.meeting.moderator,
-    //     $mmVis.width(),
-    //     $mmVis.height());
-    // $scope.mm.render('#meeting-mediator');
+    var getObjectVals = function(obj) {
+      var vals = [];
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          vals.push(obj[key]);
+        }
+      }
+      return vals;
+    }
+
+    var allbadges = getObjectVals(OBSCurrentMeeting.badgesInMeeting);
+
+    for (var i= 0; i< allbadges.length; i++){
+      $scope.memberKeys.push(allbadges[i].key)
+      $scope.memberNames.push(allbadges[i].owner)
+    }
+
+    var $mmVis = $("#meeting-mediator");
+    $mmVis.empty();
+    $scope.mm = null;
+    $scope.mm = new MM({
+            participants: $scope.memberKeys,
+            names: $scope.memberNames,
+            // transitions: 0,
+            turns: []
+        },
+        $scope.memberKeys[0],
+        $mmVis.width(),
+        $mmVis.height());
+    $scope.mm.render('#meeting-mediator');
 
 
     $scope.shiftInterval = $interval( function () {
@@ -37,20 +56,59 @@ angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($sco
       }
     }, 1000)
 
+    $scope.chartRedrawInterval = $interval( function () {
+      var getObjectVals = function(obj) {
+        var vals = [];
+        for (var key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            vals.push(obj[key]);
+          }
+        }
+        return vals;
+      }
+
+      var allbadges = getObjectVals(OBSCurrentMeeting.badgesInMeeting);
+
+      // this.displayVoltageLevels();
+
+      var turns = [];
+      var totalIntervals = 0;
+
+      // calculate intervals
+      var intervals = OBSCurrentMeeting.intervals;
+
+      // update the chart
+      $.each(allbadges, function(index, member) {
+          // update cutoff and threshold
+          member.dataAnalyzer.updateCutoff();
+          member.dataAnalyzer.updateMean();
+          //member.dataAnalyzer.updateSpeakThreshold();
+
+          turns.push({participant:member.key, turns:intervals[index].length});
+          totalIntervals += intervals[index].length;
+
+      }.bind(this));
+
+
+      $.each(turns, function(index, turn) {
+          turn.turns = turn.turns / totalIntervals;
+      });
+
+      if ($scope.mm) {
+          $scope.mm.updateData({
+              participants: $scope.memberKeys,
+              names: $scope.memberNames,
+              transitions: 0,
+              turns: turns
+          });
+      }
+    }, 1000)
+
     OBSCurrentMeeting.onDataUpdate = function(member) {
       $scope.data[member.name] = [
         []
       ]
       $scope.labels[member.name] = []
-
-      if ($scope.mm) {
-          $scope.mm.updateData({
-              participants: app.meeting.memberKeys,
-              names: app.meeting.memberInitials,
-              transitions: 0,
-              turns: turns
-          });
-      }
 
       var maxTime = new Date() / 1000; //Math.max.apply(Object.keys(member.samples))
       var minTime = maxTime - $scope.historyLength;
@@ -69,6 +127,7 @@ angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($sco
 
   $scope.leaveMeeting = function() {
     $interval.cancel($scope.shiftInterval);
+    $interval.cancel($scope.chartRedrawInterval);
     OBSCurrentMeeting.leave("manual");
     console.log("left meeting");
 

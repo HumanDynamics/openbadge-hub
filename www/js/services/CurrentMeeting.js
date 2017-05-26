@@ -53,6 +53,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
     var start = end - 1000 * 60 * 5;
     intervals = new OBSAnalysis.GroupDataAnalyzer(getObjectVals(CurrentMeeting.badgesInMeeting), start, end);
     console.log("Got intervals: ", intervals);
+    CurrentMeeting.intervals = intervals;
 
     if (type === "audio recieved") {
       var avgBySecond = {};
