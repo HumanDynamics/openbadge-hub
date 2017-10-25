@@ -139,6 +139,7 @@ function Meeting(group, members, type, moderator, description, location) {
     this.moderator = moderator;
     this.description = description;
     this.uuid = device.uuid + "_" + this.startTime.getTime();
+    this.key;
     this.log_index = 0
 
     this.toPost = []
@@ -779,7 +780,7 @@ meetingPage = new Page("meeting",
             app.meeting.writeLog("meeting ended",
                 {'end_method':"manual", "end_time":new Date()/1000}
             ).then(function () {
-                app.syncLogFile(app.meeting.getLogName(), true, "maunal", new Date())
+                app.syncLogFile(app.meeting.getLogName(), true, "manual", new Date())
             })
             if (app.meeting.pause_countdown) {
               app.meeting.pause_countdown.end()
@@ -1248,13 +1249,21 @@ app = {
     syncLogFile: function(filename, isComplete, endingMethod, endTime, meetings) {
       console.log("Starting to sync")
       var meeting_uuid = filename.split(".")[0]
+      var mtg_key = "";
+      $.each(meetings, function(key, val) {
+        if (val.uuid === meeting_uuid) {
+          mtg_key = key;
+          //break the loop we found it
+          return false;
+        }
+      });
 
-      if (meetings && (meeting_uuid in meetings) && meetings[meeting_uuid].is_complete) return
+      if (mtg_key && meetings[mtg_key].is_complete) return
 
-      if ( app.force_put || isComplete || (meetings && !(meeting_uuid in meetings))) {
+      if (app.force_put || isComplete || !mtg_key) {
         app.force_put = false
 
-        console.log("PUTiing")
+        console.log("PUTting")
         var fileTransfer = new FileTransfer();
         var uri = encodeURI(BASE_URL + app.project.key + "/meetings");
 
@@ -1317,8 +1326,8 @@ app = {
 
       } else {
         console.log("Trying to POST")
-        var last_log_timestamp = meetings[meeting_uuid].last_log_timestamp
-        var last_log_serial = meetings[meeting_uuid].last_log_serial
+        var last_log_timestamp = meetings[mtg_key].last_log_timestamp
+        var last_log_serial = meetings[mtg_key].last_log_serial
 
         var toPost = []
         window.fileStorage.load(meeting_uuid + ".txt").then( function(log) {
