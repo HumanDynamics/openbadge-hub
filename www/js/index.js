@@ -139,7 +139,6 @@ function Meeting(group, members, type, moderator, description, location) {
     this.moderator = moderator;
     this.description = description;
     this.uuid = device.uuid + "_" + this.startTime.getTime();
-    this.key;
     this.log_index = 0
 
     this.toPost = []
