@@ -236,6 +236,7 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
       };
 
       $cordovaBluetoothLE.subscribe(paramsObj).then(null, function subscribed_err(obj) {
+        console.log("error! ", obj)
         d.reject(obj);
       }, function subscribe_notif(obj) {
         d.notify(obj);
@@ -246,19 +247,20 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
     var defer = $q.defer();
 
     console.log("Subscribing to", badge.address);
-    discoverDevice().then(subscribeToDevice).then(null, function(error) {
-      if (CRITICAL_LOGGING)
-        console.log("subscription error!", error.address, error.message);
-      }
-    , function(notif) {
-      //if (MODERATE_LOGGING) console.log("got subscription update from " + badge.address, notif.value);
-      if (notif.status !== "subscribedResult") {
-        defer.notify("start");
-      }
-      defer.notify(notif);
-      if (badge.onSubscription) {
-        badge.onSubscription(notif);
-      }
+    discoverDevice().then(subscribeToDevice).then(null,
+      function(error) {
+        if (CRITICAL_LOGGING)
+          console.log("subscription error!", error.address, error.message);
+      },
+      function(notif) {
+        //if (MODERATE_LOGGING) console.log("got subscription update from " + badge.address, notif.value);
+        if (notif.status !== "subscribedResult") {
+          defer.notify("start");
+        }
+        defer.notify(notif);
+        if (badge.onSubscription) {
+          badge.onSubscription(notif);
+        }
     });
 
     return defer.promise;
@@ -276,32 +278,42 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
 
     var connectTimeout = $timeout(function() {
       console.log("The connection to", badge.address, "has timedout");
+      BluetoothFactory.endConnection(badge)
       defer.reject("connecting timedout to", badge);
     }, 60 * 1000);
 
-    $cordovaBluetoothLE.connect({address: address}).then(null, function(error) {
-      //Handle errors
-      $timeout.cancel(connectTimeout);
-      if (CRITICAL_LOGGING)
-        console.log("Error connecting: ", address, error.message);
-      }
-    , function(notif) {
-      if (MODERATE_LOGGING)
+    $cordovaBluetoothLE.connect({address: address}).then(null,
+      function(error) {
+        //Handle errors
+        $timeout.cancel(connectTimeout);
+        if (CRITICAL_LOGGING) {
+          console.log("Error connecting: ", address, error.message);
+        }
+      },
+      function(notif) {
         console.log("connection notification: ", notif.address, notif.status);
 
-      if (notif.status == "connected") {
-        $timeout.cancel(connectTimeout);
+        if (notif.status == "connected") {
+          console.log("still connected??")
+          $timeout.cancel(connectTimeout);
 
-        defer.notify(true);
+          defer.notify(true);
 
-      } else {
-        // oops, we disconnected. Change to reconnecting.
-        $timeout.cancel(connectTimeout);
-        BluetoothFactory.maintain(badge, defer);
-        // defer.notify(false);
+        } else {
+          // oops, we disconnected. Change to reconnecting.
+          console.log("DISCONNECT")
+          $timeout.cancel(connectTimeout);
+          // we have to wait a tiny bit due to android bluetooth bugs
+          // when attempting to reconnect after a disconnect
+          $timeout(function() {
+            console.log("attempting to reconnect to ", badge.address)
+            BluetoothFactory.maintain(badge, defer);
+          }, 500)
+          // defer.notify(false);
 
+        }
       }
-    });
+    );
 
     return defer.promise;
   };
@@ -310,32 +322,43 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
   BluetoothFactory.maintain = function(badge, defered) {
     var address = badge.address;
 
-    if (MODERATE_LOGGING)
+    console.log("bluetooth maintain: ", badge.address)
+    if (MODERATE_LOGGING) {
       console.log("Attempting to reconnect to", badge.address);
+    }
 
     var connectTimeout = $timeout(function() {
       console.log("The maintnence to", badge.address, "has timedout");
+      BluetoothFactory.endConnection(badge)
       defered.reject("reconnection timedout to", address);
     }, 60 * 10 * 1000);
 
-    $cordovaBluetoothLE.reconnect({address: address}).then(null, function(error) {
-
-      $timeout.cancel(connectTimeout);
-      if (CRITICAL_LOGGING)
-        console.log("Reconnect error:", error);
-      defered.reject(error);
-    }, function(notif) {
-      if (CRITICAL_LOGGING)
-        console.log("Reconnect notification:", notif.address, notif.status);
-      $timeout.cancel(connectTimeout);
-
-      if (notif.status === "disconnected") {
+    $cordovaBluetoothLE.reconnect({address: address}).then(null,
+      function(error) {
+        $timeout.cancel(connectTimeout);
+        if (CRITICAL_LOGGING) {
+          console.log("Reconnect error:", error);
+        }
+        console.log("error. trying to reconnect again");
+        //try again pls
         BluetoothFactory.maintain(badge, defered);
         defered.notify(false);
-      } else {
-        defered.notify(true);
+      },
+      function(notif) {
+        if (CRITICAL_LOGGING) {
+          console.log("Reconnect notification:", notif.address, notif.status);
+        }
+        $timeout.cancel(connectTimeout);
+
+        if (notif.status === "disconnected") {
+          BluetoothFactory.maintain(badge, defered);
+          defered.notify(false);
+        } else {
+          console.log("reconnect success", badge.address)
+          defered.notify(true);
+        }
       }
-    });
+    );
 
     // return defered;
   };
@@ -404,6 +427,9 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
   };
 
   BluetoothFactory.endConnection = function(badge) {
+    if (badge.dataCollectionInterval) {
+      $interval.cancel(badge.dataCollectionInterval);
+    }
     return $cordovaBluetoothLE.close({address: badge.address})
       .then( function() {
       console.log("Closed connection to", badge);
@@ -450,8 +476,9 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
       }
     };
 
-    if (badge.dataCollectionInterval)
+    if (badge.dataCollectionInterval) {
       $interval.cancel(badge.dataCollectionInterval);
+    }
 
     badge.dataCollectionInterval = $interval(function() {
       var ts_seconds = Math.floor(badge.lastUpdate);

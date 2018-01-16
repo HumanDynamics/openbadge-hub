@@ -126,6 +126,7 @@ angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($sco
   });
 
   $scope.leaveMeeting = function() {
+    // TODO gotta confirm end
     $interval.cancel($scope.shiftInterval);
     $interval.cancel($scope.chartRedrawInterval);
     OBSCurrentMeeting.leave("manual");
