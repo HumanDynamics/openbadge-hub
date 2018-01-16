@@ -176,20 +176,35 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
       _member = CurrentMeeting.badgesInMeeting[member];
       OBSBluetooth.endConnection(_member);
       console.log("Ended connection to", _member);
-      delete CurrentMeeting.badgesInMeeting[member]
+      delete CurrentMeeting.badgesInMeeting[member];
     }
 
     CurrentMeeting.events.push({
-      type: "hub left",
+      type: "meeting ended",
       log_timestamp: new Date() / 1000,
       log_index: CurrentMeeting.logIndex++,
       data: {
         reason: reason
       }
     });
-    return CurrentMeeting.postEvents();
+    
+    CurrentMeeting.writeLog().then(function() { 
+      CurrentMeeting.putEndMeeting(reason);
+    });
   };
 
+  CurrentMeeting.putEndMeeting = function (reason) {
+    var defer = $q.defer();
+    console.log("Now putting meeting file to end");
+    OBSBackend.endMeeting(CurrentMeeting.uuid, reason).then(function(success) {
+      console.log("Success", success);
+      defer.resolve();
+    }, function(error) {
+      console.error(error);
+      defer.reject(error);
+    });
+
+  }
   CurrentMeeting.postEvents = function() {
     var defer = $q.defer();
     var toUpload = CurrentMeeting.events.slice(CurrentMeeting.lastUpdate() + 1);

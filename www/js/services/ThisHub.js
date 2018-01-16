@@ -19,12 +19,12 @@ angular.module('ngOpenBadge.services')
     ThisHub.name = data.name;
     ThisHub.su = data.is_god;
 
-    for (var uuid in data.meetings) {
-      var recieved = data.meetings[uuid]
-      ThisHub.meetings[uuid] = {
-        isComplete: recieved.is_complete,
-        lastLogSerial: recieved.last_log_serial,
-        lastLogTimestamp: recieved.last_log_timestamp
+    for (var key in data.meetings) {
+      var received = data.meetings[key]
+      ThisHub.meetings[received.uuid] = {
+        isComplete: received.is_complete,
+        lastLogSerial: received.last_log_serial,
+        lastLogTimestamp: received.last_log_timestamp
       }
     }
   };

@@ -414,7 +414,6 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
   BluetoothFactory.configureOnSubscribe = function(badge) {
 
     var onHeaderReceived = function(data) {
-      //console.log(badge.address + " Received a header: " + data);
       var header = $struct.Unpack('<LHfHB', data); //time, fraction time (ms), voltage, sample delay, number of samples
 
       var timestamp = header[0];
@@ -458,7 +457,7 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
       var ts_seconds = Math.floor(badge.lastUpdate);
       var ts_ms = badge.lastUpdate % 1;
       var timeString = $struct.Pack('<cLH', ['r', ts_seconds, ts_ms]);
-      //console.log("Requesting sample data since", badge.lastUpdate);
+      console.log("Requesting sample data since", badge.lastUpdate);
       return BluetoothFactory.sendString(badge, timeString);
     }, 5000);
 

@@ -157,6 +157,48 @@ angular.module('ngOpenBadge.services')
 
     return defer.promise;
   };
+  
+  // End the meeting
+  BackendInterface.endMeeting = function(uuid, reason) {
+    var defer = $q.defer();
+
+    console.log("attempting to end meeting");
+    var win = function (r) {
+        console.log("Code = " + r.responseCode);
+        console.log("Response = " + r.response);
+        console.log("Sent = " + r.bytesSent);
+        defer.resolve()
+    }
+
+    var fail = function (error) {
+        console.log("upload error source " + error.source);
+        console.log("upload error target " + error.target);
+        console.log(error);
+        defer.reject();
+    }
+
+    var fileURL = cordova.file.externalDataDirectory + uuid + ".txt"
+
+    var options = new FileUploadOptions();
+    options.fileKey = "file";
+    options.fileName = fileURL.substr(fileURL.lastIndexOf('/') + 1);
+    options.mimeType = "text/plain";
+    options.headers = {"X-APPKEY": OBPrivate.APP_KEY, "X-HUB-UUID": OBPrivate.DEVICE_UUID};
+    options.httpMethod = "PUT";
+
+    var params = {
+      is_complete: true,
+      ending_method: "manual"
+    };
+
+    options.params = params;
+
+    var ft = new FileTransfer();
+
+    ft.upload(fileURL, encodeURI(OBPrivate.BASE_URL + OBSMyProject.key + "/meetings"), win, fail, options);
+
+    return defer.promise;
+  };
 
   // add events to an existing meeting
   BackendInterface.postEvents = function(events, meetingUUID) {

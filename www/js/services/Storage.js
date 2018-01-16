@@ -88,5 +88,9 @@ angular.module('ngOpenBadge.services')
     return $cordovaFile.writeFile(cordova.file.externalDataDirectory, name, contents, true);
   }
 
+  StorageService.getFile = function(name) {
+    return cordova.file.externalDataDirectory + name
+  }
+
   return StorageService;
 });
