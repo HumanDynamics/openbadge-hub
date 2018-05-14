@@ -62,6 +62,7 @@ angular.module('ngOpenBadge.contollers')
   $scope.startScan = function() {
 
     // if we dont have a badge in first 10 sec, give up.
+    // NOTE: why?
     // TODO: Should also notify that we cant find anything.
     var timer = $scope.resetTimer(10000);
 

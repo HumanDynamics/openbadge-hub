@@ -2,7 +2,7 @@
 Here we wrap all HTTP requests, provide some light data formatting, and
   send the data off to be sed by the various OpenBadgeServices.
 
-We also interface with OBSStorage in order to fill requests when disconnected form internet
+We also interface with OBSStorage in order to fill requests when disconnected from internet
 */
 
 angular.module('ngOpenBadge.services')

@@ -12,6 +12,7 @@
         <div id="meeting-mediator" class="meeting-mediator" style="height:350px;width:100%"></div>
       </div>
 
+      <!-- TODO: only in god mode? -->
       <div ng-repeat="(n, d) in data" class="card">
         {{n}}
         <canvas id="line" class="chart chart-line" chart-data="data[n]"
