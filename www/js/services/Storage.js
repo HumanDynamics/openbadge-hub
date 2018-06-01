@@ -45,7 +45,7 @@ angular.module('ngOpenBadge.services')
   };
 
 
-  // SorageService.initializeLogFile = function(meeting) {
+  // StorageService.initializeLogFile = function(meeting) {
   //   window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fs) {
   //
   //     console.log('file system open: ' + fs.name);

@@ -24,7 +24,9 @@ angular.module('ngOpenBadge.services')
     console.log("starting longTermRefresh");
     $http.get(baseURL() + 'projects', {timeout:2000}).then(
       function got_projects(response) {
-        if (LOGGING) console.log("got project data:", response);
+        if (LOGGING) {
+          console.log("got project data:", response);
+        }
 
         OBSMyProject.create(response.data);
 
@@ -34,7 +36,9 @@ angular.module('ngOpenBadge.services')
         defer.resolve(200);
       },
       function error_projects(response) {
-        if (LOGGING) console.log("Ahh! Error getting long term data", response);
+        if (LOGGING) {
+          console.log("Ahh! Error getting long term data", response);
+        }
 
         if (response.status == 404) {
           BackendInterface.configureHub('new hub');
@@ -43,7 +47,9 @@ angular.module('ngOpenBadge.services')
 
         var cachedProject = OBSStorage.retrieveProject();
         if (cachedProject) {
-          if (LOGGING) console.log("attempting to fill project data from cache", cachedProject);
+          if (LOGGING) {
+            console.log("attempting to fill project data from cache", cachedProject);
+          }
           OBSMyProject.create(cachedProject);
           defer.resolve(300);
         } else {
@@ -60,7 +66,9 @@ angular.module('ngOpenBadge.services')
     var defer = $q.defer();
     console.log("starting shortTermRefresh");
     var lastMemberUpdate = OBSStorage.retrieveMemberUpdate();
-    if (!lastMemberUpdate) lastMemberUpdate = 0;
+    if (!lastMemberUpdate) {
+      lastMemberUpdate = 0;
+    }
 
     $http.get(baseURL() + OBSMyProject.key + '/hubs', {
       timeout: 2000,
@@ -79,12 +87,16 @@ angular.module('ngOpenBadge.services')
         defer.resolve();
       },
       function error_projects(response) {
-        if (LOGGING) console.log("Ahh! Error getting hub data", response);
+        if (LOGGING) {
+          console.log("Ahh! Error getting hub data", response);
+        }
 
         var cachedHub = OBSStorage.retrieveHub();
         if (cachedHub) {
 
-          if (LOGGING) console.log("attempting to fill hub data from cache", cachedHub);
+          if (LOGGING) {
+            console.log("attempting to fill hub data from cache", cachedHub);
+          }
 
           OBSThisHub.create(cachedHub);
         }
@@ -107,23 +119,23 @@ angular.module('ngOpenBadge.services')
       }
     }).then(
       function put_hub(response) {
-        if (LOGGING) console.log("put hub data:", response);
+        if (LOGGING) {
+          console.log("put hub data:", response);
+        }
         defer.resolve();
       },
       function error_projects(response) {
-        if (LOGGING) console.log("Ahh! Error putting data", response);
+        if (LOGGING) {
+          console.log("Ahh! Error putting data", response);
+        }
         defer.reject(response.status);
-
       }
     );
     return defer.promise;
   };
 
-  // create the empty meeting object
-  BackendInterface.initMeeting = function(uuid) {
-    var defer = $q.defer();
+  function uploadFile(uuid, params) {
 
-    console.log($cordovaFile.readAsText(cordova.file.externalDataDirectory, uuid + ".txt"));
     var win = function (r) {
         console.log("Code = " + r.responseCode);
         console.log("Response = " + r.response);
@@ -147,57 +159,37 @@ angular.module('ngOpenBadge.services')
     options.headers = {"X-APPKEY": OBPrivate.APP_KEY, "X-HUB-UUID": OBPrivate.DEVICE_UUID};
     options.httpMethod = "PUT";
 
-    var params = {isComplete: false};
-
     options.params = params;
 
     var ft = new FileTransfer();
 
-    ft.upload(fileURL, encodeURI(OBPrivate.BASE_URL + OBSMyProject.key + "/meetings"), win, fail, options);
+    ft.upload(fileURL,
+              encodeURI(OBPrivate.BASE_URL + OBSMyProject.key + "/meetings"),
+              win,
+              fail,
+              options);
 
     return defer.promise;
+
+  }
+
+  // create the empty meeting object
+  BackendInterface.initMeeting = function(uuid) {
+    console.log("Attempting to init meeting obj for: " + uuid)
+
+    var params = {isComplete: false};
+
+    return uploadMeeting(uuid, params);
   };
   
   // End the meeting
   BackendInterface.endMeeting = function(uuid, reason) {
-    var defer = $q.defer();
-
-    console.log("attempting to end meeting");
-    var win = function (r) {
-        console.log("Code = " + r.responseCode);
-        console.log("Response = " + r.response);
-        console.log("Sent = " + r.bytesSent);
-        defer.resolve()
-    }
-
-    var fail = function (error) {
-        console.log("upload error source " + error.source);
-        console.log("upload error target " + error.target);
-        console.log(error);
-        defer.reject();
-    }
-
-    var fileURL = cordova.file.externalDataDirectory + uuid + ".txt"
-
-    var options = new FileUploadOptions();
-    options.fileKey = "file";
-    options.fileName = fileURL.substr(fileURL.lastIndexOf('/') + 1);
-    options.mimeType = "text/plain";
-    options.headers = {"X-APPKEY": OBPrivate.APP_KEY, "X-HUB-UUID": OBPrivate.DEVICE_UUID};
-    options.httpMethod = "PUT";
+    console.log("attempting to end meeting: " + uuid + " because: " + reason);
 
     var params = {
       is_complete: true,
-      ending_method: "manual"
-    };
-
-    options.params = params;
-
-    var ft = new FileTransfer();
-
-    ft.upload(fileURL, encodeURI(OBPrivate.BASE_URL + OBSMyProject.key + "/meetings"), win, fail, options);
-
-    return defer.promise;
+      ending_method: "manual" };
+    return uploadMeeting(uuid, params);
   };
 
   // add events to an existing meeting

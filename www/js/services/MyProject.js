@@ -18,7 +18,9 @@ angular.module('ngOpenBadge.services')
   };
 
   MyProject.create = function(data) {
-    if (LOGGING) console.log("giving my project data:", data);
+    if (LOGGING) {
+      console.log("giving my project data:", data);
+    }
 
     MyProject.key       = data.key;
     MyProject.members   = data.members;

@@ -1,5 +1,5 @@
 /*
-All interactiaons with the badges and the cordovaBlueetoothLE plugin should happen
+All interactions with the badges and the cordovaBlueetoothLE plugin should happen
   through here.
 */
 
@@ -29,11 +29,13 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
   BluetoothFactory.startScan = function() {
     var badgeMap = OBSMyProject.badgeMap;
 
-    if (MODERATE_LOGGING)
+    if (MODERATE_LOGGING) {
       console.log("STARTING SCAN");
+    }
 
-    if (typeof scanPromise !== "undefined")
+    if (typeof scanPromise !== "undefined") {
       scanPromise.reject("Starting new Scan");
+    }
 
     scanPromise = $q.defer();
 
@@ -115,58 +117,65 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
       return adv_payload;
     };
 
-    $cordovaBluetoothLE.startScan({services: []}).then(null, function startscan_error(obj) {
-      if (CRITICAL_LOGGING)
-        console.log("Scan error", obj.message);
-      }
-    , function startscan_notify(obj) {
-      if (obj.status === "scanResult") {
+    $cordovaBluetoothLE.startScan({services: []}).then(
+      null,
+      function startscan_error(obj) {
+        console.log("Starting Scan Error");
+        if (CRITICAL_LOGGING) {
+          console.log("Scan error", obj.message);
+        }
+      },
+      function startscan_notify(obj) {
+        console.log("Start Scan Notify")
+        if (obj.status === "scanResult") {
 
-        if (obj.name === "HDBDG") {
+          if (obj.name === "HDBDG") {
 
+            if (MODERATE_LOGGING) {
+              console.log("Scan found " + obj.address);
+            }
+
+            if (obj.address in badgeMap) {
+
+              var adbytes = $cordovaBluetoothLE.encodedStringToBytes(obj.advertisement);
+              var adStr = $cordovaBluetoothLE.bytesToString(adbytes);
+              var adBadgeData = unpackBroadcast(adStr);
+
+              // tell the promise that we found something
+              adBadgeData.owner = badgeMap[obj.address].name;
+              adBadgeData.key = badgeMap[obj.address].key;
+              adBadgeData.address = obj.address;
+
+              adBadgeData.rssi = obj.rssi;
+
+              // TODO MAKE CONSTANTS
+              if (adBadgeData.rssi < -120) {
+                adBadgeData.strength = 'low';
+              } else if (adBadgeData.rssi < -70) {
+                adBadgeData.strength = 'mild';
+              } else {
+                adBadgeData.strength = 'good';
+              }
+
+              // TODO MAKE CONSTANTS
+              if (adBadgeData.voltage > 2.8) {
+                adBadgeData.battery = 'ion-battery-full';
+              } else if (adBadgeData.voltage > 2.5) {
+                adBadgeData.battery = 'ion-battery-half';
+              } else {
+                adBadgeData.battery = 'ion-battery-empty';
+              }
+
+              scanPromise.notify(adBadgeData);
+            }
+          }
+        } else if (obj.status === "scanStarted") {
+          // no affect on the scan promise, just wait
           if (MODERATE_LOGGING) {
-            console.log("Scan found " + obj.address);
-          }
-
-          if (obj.address in badgeMap) {
-
-            var adbytes = $cordovaBluetoothLE.encodedStringToBytes(obj.advertisement);
-            var adStr = $cordovaBluetoothLE.bytesToString(adbytes);
-            var adBadgeData = unpackBroadcast(adStr);
-
-            // tell the promise that we found something
-            adBadgeData.owner = badgeMap[obj.address].name;
-            adBadgeData.key = badgeMap[obj.address].key;
-            adBadgeData.address = obj.address;
-
-            adBadgeData.rssi = obj.rssi;
-
-            if (adBadgeData.rssi < -120) {
-              adBadgeData.strength = 'low';
-            } else if (adBadgeData.rssi < -70) {
-              adBadgeData.strength = 'mild';
-            } else {
-              adBadgeData.strength = 'good';
-            }
-
-            if (adBadgeData.voltage > 2.7) {
-              adBadgeData.battery = 'ion-battery-full';
-            } else if (adBadgeData.voltage > 2.4) {
-              adBadgeData.battery = 'ion-battery-half';
-            } else {
-              adBadgeData.battery = 'ion-battery-empty';
-            }
-
-            scanPromise.notify(adBadgeData);
+            console.log("Scan started");
           }
         }
-      } else if (obj.status === "scanStarted") {
-        // no affect on the scan promise, just wait
-        if (MODERATE_LOGGING) {
-          console.log("Scan started");
-        }
-      }
-    });
+      });
     return scanPromise.promise;
   };
 
@@ -196,12 +205,15 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
 
   // is the hub currently engaged in a scan?
   BluetoothFactory.isScanning = function() {
-    if (MODERATE_LOGGING)
+    if (MODERATE_LOGGING) {
       console.log("CHECKING SCAN");
+    }
+
     var deferredIsScannning = $q.defer();
     $cordovaBluetoothLE.isScanning().then(function(obj) {
-      if (MODERATE_LOGGING)
+      if (MODERATE_LOGGING) {
         console.log("Is Scanning Success : ", obj);
+      }
       deferredIsScannning.resolve(obj.isScanning);
     });
     return deferredIsScannning.promise;
@@ -218,16 +230,18 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
       var paramsObj = {
         "address": address
       };
-      $cordovaBluetoothLE.discover(paramsObj).then(function discovered(obj) { // success
-        //console.log(address + "|Internal call to discover - success");
-        if (obj.status == "discovered") {
-          d.resolve(obj);
-        } else {
+      $cordovaBluetoothLE.discover(paramsObj).then(
+        function discover_success(obj) {
+          //console.log(address + "|Internal call to discover - success");
+          if (obj.status == "discovered") {
+            d.resolve(obj);
+          } else {
+            d.reject(obj);
+          }
+        },
+        function discover_fail(obj) {
           d.reject(obj);
-        }
-      }, function disconver_err(obj) { // failure function
-        d.reject(obj);
-      });
+        });
 
       return d.promise;
     };
@@ -243,19 +257,24 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
         "isNotification": true
       };
 
-      $cordovaBluetoothLE.subscribe(paramsObj).then(null, function subscribed_err(obj) {
-        console.log("error! ", obj)
-        d.reject(obj);
-      }, function subscribe_notif(obj) {
-        d.notify(obj);
-      });
+      $cordovaBluetoothLE.subscribe(paramsObj).then(
+        null,
+        function subscribed_err(obj) {
+          console.log("error! ", obj)
+          d.reject(obj);
+        },
+        function subscribe_notif(obj) {
+          d.notify(obj);
+        });
+
       return d.promise;
     };
 
     var defer = $q.defer();
 
     console.log("Subscribing to", badge.address);
-    discoverDevice().then(subscribeToDevice).then(null,
+    discoverDevice().then(subscribeToDevice).then(
+      null,
       function(error) {
         if (CRITICAL_LOGGING) {
           console.log("subscription error!", error.address, error.message);
@@ -270,7 +289,8 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
         if (badge.onSubscription) {
           badge.onSubscription(notif);
         }
-    });
+      }
+    );
 
     return defer.promise;
   };
@@ -338,10 +358,10 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
     }
 
     var connectTimeout = $timeout(function() {
-      console.log("The maintnence to", badge.address, "has timedout");
+      console.log("The maintenance to", badge.address, "has timedout");
       BluetoothFactory.endConnection(badge);
       defered.reject("reconnection timedout to", address);
-    }, 10 * 60 * 1000);
+    }, 10 * 60 * 1000); // ten minutes?
 
     $cordovaBluetoothLE.reconnect({address: address}).then(null,
       function(error) {
@@ -350,7 +370,7 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
           console.log("Reconnect error:", error);
         }
         console.log("error. trying to reconnect again");
-        //try again pls
+        // try again pls
         BluetoothFactory.maintain(badge, defered);
         defered.notify(false);
       },
@@ -416,37 +436,40 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
   //   listener things for hearing what the badge tells us.
   BluetoothFactory.initializeBadgeBluetooth = function(badge) {
     BluetoothFactory.connect(badge). // start a long standing, self-recovering connection
-    then(null, function() {
-      if (!badge.hasConnected) {
-        console.log("recursively attempting to connect... heregoes");
-        BluetoothFactory.initializeBadgeBluetooth(badge);
-      }
-    }, function(connected) {
-      if (connected) {
-        badge.hasConnected = true;
-        // send a message to start recording.
-        // we should discover and stuff here too.
-        if (!badge.onSubscription) {
-          console.log("creating onSubscription for", badge.address);
-          BluetoothFactory.configureOnSubscribe(badge);
+    then(
+      null,
+      function() {
+        if (!badge.hasConnected) {
+          console.log("recursively attempting to connect... heregoes");
+          BluetoothFactory.initializeBadgeBluetooth(badge);
         }
-        BluetoothFactory.discoverAndSubscribe(badge).then(null, null, function(notif) {
-          if (notif === "start") {
-            BluetoothFactory.sendStartRecordingRequest(badge);
+      },
+      function(connected) {
+        if (connected) {
+          badge.hasConnected = true;
+          // send a message to start recording.
+          // we should discover and stuff here too.
+          if (!badge.onSubscription) {
+            console.log("creating onSubscription for", badge.address);
+            BluetoothFactory.configureOnSubscribe(badge);
           }
-        });
-      }
-    });
+          BluetoothFactory.discoverAndSubscribe(badge).then(null, null, function(notif) {
+            if (notif === "start") {
+              BluetoothFactory.sendStartRecordingRequest(badge);
+            }
+          });
+        }
+      });
   };
 
   BluetoothFactory.endConnection = function(badge) {
     if (badge.dataCollectionInterval) {
       $interval.cancel(badge.dataCollectionInterval);
     }
-    return $cordovaBluetoothLE.close({address: badge.address})
-      .then( function() {
-      console.log("Closed connection to", badge);
-      })
+    return $cordovaBluetoothLE.close({address: badge.address}).then(
+      function() {
+        console.log("Closed connection to", badge);
+      });
   }
 
   // create badge's onSubscribe function, which parses subscription data
