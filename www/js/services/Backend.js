@@ -134,7 +134,7 @@ angular.module('ngOpenBadge.services')
     return defer.promise;
   };
 
-  function uploadFile(uuid, params) {
+  function uploadFile(uuid, defer, params) {
 
     var win = function (r) {
         console.log("Code = " + r.responseCode);
@@ -176,20 +176,22 @@ angular.module('ngOpenBadge.services')
   // create the empty meeting object
   BackendInterface.initMeeting = function(uuid) {
     console.log("Attempting to init meeting obj for: " + uuid)
+    var defer = $q.defer();
 
-    var params = {isComplete: false};
+    var params = {is_complete: false};
 
-    return uploadMeeting(uuid, params);
+    return uploadFile(uuid, defer, params);
   };
   
   // End the meeting
   BackendInterface.endMeeting = function(uuid, reason) {
     console.log("attempting to end meeting: " + uuid + " because: " + reason);
+    var defer = $q.defer();
 
     var params = {
       is_complete: true,
       ending_method: "manual" };
-    return uploadMeeting(uuid, params);
+    return uploadFile(uuid, defer, params);
   };
 
   // add events to an existing meeting

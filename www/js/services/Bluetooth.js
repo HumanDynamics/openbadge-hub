@@ -1,5 +1,5 @@
 /*
-All interactions with the badges and the cordovaBlueetoothLE plugin should happen
+All interactions with the badges and the cordovaBluetoothLE plugin should happen
   through here.
 */
 
@@ -16,12 +16,15 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
 
   // first step when using bluetooth, have to make sure its on and stuff
   BluetoothFactory.init = function() {
-    if (MODERATE_LOGGING)
+    if (MODERATE_LOGGING) {
       console.log("INITING BLUETOOTH");
-    return $cordovaBluetoothLE.initialize({request: true}).then(null, null,
-    // update = recieved permissions (hopefully)
-    // this will fail on iPhone. Hopefully we can roll with it.
-    $cordovaBluetoothLE.requestPermission);
+    }
+    return $cordovaBluetoothLE.initialize({request: true}).then(
+      null,
+      null,
+      // update = recieved permissions (hopefully)
+      // this will fail on iPhone. Hopefully we can roll with it.
+      $cordovaBluetoothLE.requestPermission);
   };
 
   var scanPromise;
@@ -104,9 +107,10 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
             var mac = "";
             for (var i = 10; i >= 5; i--) {
               mac += ('00' + (payload[i]).toString(16)).slice(-2);
-              if (i > 5)
+              if (i > 5) {
                 mac += ":";
               }
+            }
             adv_payload.mac = mac.toUpperCase();
           }
         }
@@ -126,7 +130,7 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
         }
       },
       function startscan_notify(obj) {
-        console.log("Start Scan Notify")
+        // console.log("Start Scan Notify")
         if (obj.status === "scanResult") {
 
           if (obj.name === "HDBDG") {

@@ -179,6 +179,8 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
       delete CurrentMeeting.badgesInMeeting[member];
     }
 
+    //TODO make sure we've got all data from badges?
+
     CurrentMeeting.events.push({
       type: "meeting ended",
       log_timestamp: new Date() / 1000,
