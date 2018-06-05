@@ -3,6 +3,7 @@ angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($sco
   $scope.historyLength = 2 * 60;
 
   $scope.$on('$ionicView.enter', function(e) {
+    window.plugins.insomnia.keepAwake()
     OBSCurrentMeeting.start();
 
     $scope.memberKeys = []
