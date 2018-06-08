@@ -14,6 +14,24 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
     rxCharacteristic: '6e400003-b5a3-f393-e0a9-e50e24dcca9e' // receive is from the phone's perspective
   };
 
+  var enableRequiredSettings = function(isBTEnabled) {
+    let enableLocation = function(params) {
+      if (params.isLocationEnabled) {
+        // we dont do anything
+        console.log("Location already enabled");
+        return;
+      } else {
+        console.log("Requesting Location");
+        return $cordovaBluetoothLE.requestLocation();
+      }
+    };
+
+    return $cordovaBluetoothLE.requestPermission()
+      .then($cordovaBluetoothLE.isLocationEnabled)
+      .then(enableLocation);
+
+  }
+
   // first step when using bluetooth, have to make sure its on and stuff
   BluetoothFactory.init = function() {
     if (MODERATE_LOGGING) {
@@ -22,9 +40,9 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
     return $cordovaBluetoothLE.initialize({request: true}).then(
       null,
       null,
-      // update = recieved permissions (hopefully)
+      // on success (/notify), request location permissions (hopefully)
       // this will fail on iPhone. Hopefully we can roll with it.
-      $cordovaBluetoothLE.requestPermission);
+      enableRequiredSettings);
   };
 
   var scanPromise;
