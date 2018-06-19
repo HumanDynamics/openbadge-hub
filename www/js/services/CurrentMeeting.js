@@ -1,5 +1,5 @@
 /*
-Data about our current meeting, including methods to stire data to the meeting,
+Data about our current meeting, including methods to store data to the meeting,
   interact with the badges of the meeting, and persist meeting data
   */
 
@@ -168,7 +168,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
     OBSBluetooth.initializeBadgeBluetooth(member);
   }
 
-  // uplaod a final chunk telling the server that we're done. stop the uploads.
+  // upload a final chunk telling the server that we're done. stop the uploads.
   CurrentMeeting.leave = function(reason) {
     $interval.cancel(CurrentMeeting.postInterval);
 
@@ -197,17 +197,10 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
   };
 
   CurrentMeeting.putEndMeeting = function (reason) {
-    var defer = $q.defer();
     console.log("Now putting meeting file to end");
-    OBSBackend.endMeeting(CurrentMeeting.uuid, reason).then(function(success) {
-      console.log("Success", success);
-      defer.resolve();
-    }, function(error) {
-      console.error(error);
-      defer.reject(error);
-    });
+    OBSThisHub.endMeeting(CurrentMeeting.uuid, reason)
+  };
 
-  }
   CurrentMeeting.postEvents = function() {
     var defer = $q.defer();
     var toUpload = CurrentMeeting.events.slice(CurrentMeeting.lastUpdate() + 1);

@@ -503,6 +503,7 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
   };
 
   BluetoothFactory.endConnection = function(badge) {
+    //TODO check for uncollected data?
     if (badge.dataCollectionInterval) {
       $interval.cancel(badge.dataCollectionInterval);
     }

@@ -19,6 +19,9 @@ angular.module('ngOpenBadge.services')
     // Perform a full refresh of all data, both hub and project. Should be
     //  called perhaps once per session. Needs to be called whenever a hub
     //  changes project.
+    //
+    //  TODO should we sync completed meetings here?
+    //  maybe.
 
     var defer = $q.defer();
     console.log("starting longTermRefresh");
@@ -77,7 +80,9 @@ angular.module('ngOpenBadge.services')
       }
     }).then(
       function got_projects(response) {
-        if (LOGGING) console.log("got hub data:", response);
+        if (LOGGING) {
+          console.log("got hub data:", response);
+        }
         OBSThisHub.create(response.data);
         OBSMyProject.update(response.data.member_updates);
 
@@ -93,7 +98,6 @@ angular.module('ngOpenBadge.services')
 
         var cachedHub = OBSStorage.retrieveHub();
         if (cachedHub) {
-
           if (LOGGING) {
             console.log("attempting to fill hub data from cache", cachedHub);
           }

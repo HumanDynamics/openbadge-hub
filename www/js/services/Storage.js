@@ -1,5 +1,5 @@
 /*
-All persistant storage should happen through this wrapper.
+All persistent storage should happen through this wrapper.
 
 This includes localStorage and WebSQL and all that fun stuff.
 
@@ -88,8 +88,46 @@ angular.module('ngOpenBadge.services')
     return $cordovaFile.writeFile(cordova.file.externalDataDirectory, name, contents, true);
   }
 
-  StorageService.getFile = function(name) {
-    return cordova.file.externalDataDirectory + name
+  StorageService.readFile = function(name) {
+    // returns a promise that resolves to the contents of the provided file
+    return new Promise(function (outerResolve, outerReject) {
+      new Promise(function (resolve, reject) {
+        window.resolveLocalFileSystemURL(
+                cordova.file.externalDataDirectory + name,
+                resolve, 
+                reject);
+      }).then(function (file) {
+        let reader = new FileReader();
+
+        reader.onloadend = function (evt) {
+          outerResolve(evt.target.results);
+        }
+
+        reader.readAsText(file);
+      }).catch(outerReject);
+    });
+  }
+
+  StorageService.listFiles = function() {
+    return new Promise(function (outerResolve, outerReject) {
+      new Promise(function (resolve, reject) {
+        window.resolveLocalFileSystemURL(
+                cordova.file.externalDataDirectory,
+                resolve, 
+                reject);
+      }).then(function (dir) {
+        let reader = dir.createReader();
+        return new Promise(function (resolve, reject) {
+          reader.readEntries(resolve, reject);
+        });
+      }).then(function (entries) {
+        let fileList = [];
+        for (var entry in entries) {
+          fileList.push(entry.fullPath);
+        };
+        outerResolve(fileList);
+      }).catch(outerReject);
+    });
   }
 
   return StorageService;
