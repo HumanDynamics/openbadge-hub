@@ -193,6 +193,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
     CurrentMeeting.writeLog().then(function() { 
       CurrentMeeting.putEndMeeting(reason);
     });
+
   };
 
   CurrentMeeting.putEndMeeting = function (reason) {

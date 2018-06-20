@@ -268,7 +268,7 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
       return d.promise;
     };
 
-    var subscribeToDevice = function() {
+    var subscribeToDevice = function(successObj) {
       var address = badge.address;
       //console.log(address + "|Internal call to subscribe");
       var d = $q.defer();
@@ -391,10 +391,15 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
         if (CRITICAL_LOGGING) {
           console.log("Reconnect error:", error);
         }
-        console.log("error. trying to reconnect again");
-        // try again pls
-        BluetoothFactory.maintain(badge, defered);
-        defered.notify(false);
+        if (error.error !== "isNotDisconnected") {
+          console.log("error. trying to reconnect again");
+          // try again pls
+          BluetoothFactory.maintain(badge, defered);
+          defered.notify(false);
+        } else {
+          console.log("Can't reconnect, was never disconnected");
+          defered.notify(true);
+        }
       },
       function(notif) {
         if (CRITICAL_LOGGING) {
@@ -457,41 +462,57 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
   // connect to badge and set up functions and
   //   listener things for hearing what the badge tells us.
   BluetoothFactory.initializeBadgeBluetooth = function(badge) {
-    BluetoothFactory.connect(badge). // start a long standing, self-recovering connection
-    then(
-      null,
-      function() {
-        if (!badge.hasConnected) {
-          console.log("recursively attempting to connect... heregoes");
-          BluetoothFactory.initializeBadgeBluetooth(badge);
-        }
-      },
-      function(connected) {
-        if (connected) {
-          badge.hasConnected = true;
-          // send a message to start recording.
-          // we should discover and stuff here too.
-          if (!badge.onSubscription) {
-            console.log("creating onSubscription for", badge.address);
-            BluetoothFactory.configureOnSubscribe(badge);
+    BluetoothFactory.connect(badge) // start a long standing, self-recovering connection
+      .then(
+        null,
+        function() {
+          if (!badge.hasConnected) {
+            console.log("recursively attempting to connect... heregoes");
+            BluetoothFactory.initializeBadgeBluetooth(badge);
           }
-          BluetoothFactory.discoverAndSubscribe(badge).then(null, null, function(notif) {
-            if (notif === "start") {
-              BluetoothFactory.sendStartRecordingRequest(badge);
+        },
+        function(connected) {
+          if (connected) {
+            badge.hasConnected = true;
+            // send a message to start recording.
+            // we should discover and stuff here too.
+            if (!badge.onSubscription) {
+              console.log("creating onSubscription for", badge.address);
+              BluetoothFactory.configureOnSubscribe(badge);
             }
-          });
-        }
-      });
+            BluetoothFactory.discoverAndSubscribe(badge).then(null, null, function(notif) {
+              if (notif === "start") {
+                BluetoothFactory.sendStartRecordingRequest(badge);
+              }
+            });
+          }
+        });
   };
 
   BluetoothFactory.endConnection = function(badge) {
     if (badge.dataCollectionInterval) {
       $interval.cancel(badge.dataCollectionInterval);
     }
-    return $cordovaBluetoothLE.close({address: badge.address}).then(
-      function() {
-        console.log("Closed connection to", badge);
-      });
+
+    badge.onSubscription = undefined;
+
+    $cordovaBluetoothLE.disconnect({address: badge.address}).then(function (success) {
+      console.log("Success disconnecting!", success);
+      return $cordovaBluetoothLE.close({address: badge.address})
+    }).catch(function (err) {
+      console.log("Error disconnecting!", err);
+      if (err.error === "isDisconnected") {
+        return $cordovaBluetoothLE.close({address: badge.address});
+      } else {
+        throw err;
+      }
+    }).then(function (success) {
+      console.log("success closing! ", success);
+      console.log("Closed connection to", badge);
+    }).catch(function (err) {
+      console.log("Error closing/disconnecting: ", err);
+    });
+
   }
 
   // create badge's onSubscribe function, which parses subscription data
