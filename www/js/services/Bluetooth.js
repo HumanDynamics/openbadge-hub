@@ -341,6 +341,8 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
         if (CRITICAL_LOGGING) {
           console.log("Error connecting: ", address, error.message);
         }
+        // we failed to connect - recursively try again
+        BluetoothFactory.connect(badge);
       },
       function(notif) {
         console.log("connection notification: ", notif.address, notif.status);
