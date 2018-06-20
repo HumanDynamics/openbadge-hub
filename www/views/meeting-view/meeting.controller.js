@@ -126,17 +126,29 @@ angular.module('ngOpenBadge.contollers').controller('MeetingCtrl', function($sco
     }
   });
 
-  $scope.leaveMeeting = function() {
-    // TODO gotta confirm end
-    $interval.cancel($scope.shiftInterval);
-    $interval.cancel($scope.chartRedrawInterval);
-    OBSCurrentMeeting.leave("manual");
-    console.log("left meeting");
+  function onLeaveConfirm(buttonIndex) {
+    // buttonIndex: 1 = OK, 2 = CANCEL
+    if (buttonIndex === 1) {
+      $interval.cancel($scope.shiftInterval);
+      $interval.cancel($scope.chartRedrawInterval);
+      OBSCurrentMeeting.leave("manual");
+      console.log("left meeting");
 
-    $ionicHistory.nextViewOptions({
-      disableBack: true
-    });
-    $state.go('app.group');
+      $ionicHistory.nextViewOptions({
+        disableBack: true
+      });
+      $state.go('app.group');
+    } else {
+      // nothing to see here
+      return;
+    }
+  }
+
+  $scope.leaveMeetingConfirm = function() {
+    navigator.notification.confirm(
+      "Are you sure you want to end the meeting?",
+      onLeaveConfirm,
+      "End Meeting");
   };
 
   $scope.labels = {};
