@@ -186,15 +186,17 @@ angular.module('ngOpenBadge.services')
 
     return uploadFile(uuid, defer, params);
   };
-  
+
   // End the meeting
-  BackendInterface.endMeeting = function(uuid, reason) {
-    console.log("attempting to end meeting: " + uuid + " because: " + reason);
+  BackendInterface.uploadEndedMeeting = function(uuid, reason) {
+    console.log("attempting to upload ended meeting: " + uuid + " because: " + reason);
     var defer = $q.defer();
 
     var params = {
       is_complete: true,
-      ending_method: "manual" };
+      ending_method: "manual"
+    };
+
     return uploadFile(uuid, defer, params);
   };
 

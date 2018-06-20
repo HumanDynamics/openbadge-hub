@@ -26,7 +26,7 @@ angular.module('ngOpenBadge.services')
         if (!received.uuid in ThisHub.meetings) {
           // an old meeting that has already been uploaded and cleared from cache
           continue;
-        } else if (received.is_complete !== ThisHub.meetings[received.uuid].is_complete) {
+        } else if (received.is_complete && !ThisHub.meetings[received.uuid].is_complete) {
           // there is inconsistency b/w local data and server data - sync
           ThisHub.syncMeeting(received.uuid);
         }
@@ -56,11 +56,11 @@ angular.module('ngOpenBadge.services')
   }
   
   ThisHub.syncMeeting = function(uuid) {
-      OBSBackend.endMeeting(uuid, reason).then(function(success) {
-        console.log("Success", success);
-      }, function(error) {
-        console.error(error);
-      });
+    OBSBackend.uploadEndedMeeting(uuid, reason).then(function(success) {
+      console.log("Success", success);
+    }, function(error) {
+      console.error(error);
+    });
   }
 
   ThisHub.scanMeetings = function() {
@@ -81,11 +81,16 @@ angular.module('ngOpenBadge.services')
           let isMeetingEnded = lastLog["type"] === "meeting ended";
 
           ThisHub.meetings[meetingUUID] = {
+            // using snake case here to match the api
             is_complete: isMeetingEnded,
             lastLogSerial: lastLog["log_index"],
             lastLogTimestamp: lastLog["log_timestamp"]
           };
 
+          // if the uuid doesn't match the active meeting and it hasn't been ended,
+          // that means the meeting wasn't properly ended by the user
+          // likely either the app crashed or the user accidentally closed it
+          // regardless, we should end the meeting & upload it to the server
           if (meetingUUID !== OBSCurrentMeeting.uuid && !isMeetingEnded) {
             ThisHub.endMeeting(meetingUUID, "sync");
           }

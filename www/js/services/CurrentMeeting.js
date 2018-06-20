@@ -89,6 +89,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
     badge.dataAnalyzer.clearData();
     CurrentMeeting.data[badge.mac] = null;
     if (badge.mac in CurrentMeeting.badgesInMeeting)
+      // NOTE - a reference for the badge is still stored in the views
       delete CurrentMeeting.badgesInMeeting[badge.mac];
     };
 
