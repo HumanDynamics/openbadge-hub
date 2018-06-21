@@ -4,11 +4,12 @@ Methods for the Hub... like uploading stale logs. or something like that.
 
 angular.module('ngOpenBadge.services')
 
-.factory('OBSThisHub', function(OBSBackend, OBSCurrentMeeting) {
+.factory('OBSThisHub', function(OBSBackend, OBSStorage, $q) {
   var ThisHub = {
     name: "",
     meetings: {},
-    is_god: false
+    is_god: false,
+    activeMeeting: null
   };
 
   var LOGGING = true;
@@ -23,43 +24,69 @@ angular.module('ngOpenBadge.services')
 
       for (var key in data.meetings) {
         var received = data.meetings[key]
-        if (!received.uuid in ThisHub.meetings) {
+        console.log("Checking uuid", received.uuid)
+        console.log(ThisHub.meetings[received.uuid])
+        if (!(received.uuid in ThisHub.meetings)) {
           // an old meeting that has already been uploaded and cleared from cache
           continue;
-        } else if (received.is_complete && !ThisHub.meetings[received.uuid].is_complete) {
+        } else if (!received.is_complete && ThisHub.meetings[received.uuid].is_complete) {
           // there is inconsistency b/w local data and server data - sync
-          ThisHub.syncMeeting(received.uuid);
+          ThisHub.syncMeeting(received.uuid, "sync");
         }
       }
+    }).catch(function(err) {
+      console.log("Err scan!", err);
     });
+
   };
 
-  ThisHub.endMeeting = function(uuid, reason) {
-    if (uuid in ThisHub.meetings) {
-      ThisHub.meetings[uuid].is_complete = true;
-      return ThisHub.wrteEndLog(uuid, reason).then(function() {
-        ThisHub.syncMeeting(uuid, reason);
+  ThisHub.updateServerLogSerial = function (data) {
+    for (var key in data.meetings) {
+      var received = data.meetings[key]
+      if (!(received.uuid in ThisHub.meetings)) {
+        // an old meeting that has already been uploaded and cleared from cache
+        continue;
+      } else {
+        ThisHub.meetings[received.uuid]["serverLogSerial"] = received.last_log_serial;
       }
     }
   }
 
+
+  ThisHub.endMeeting = function(uuid, reason) {
+    if (uuid in ThisHub.meetings) {
+      ThisHub.meetings[uuid].is_complete = true;
+      return ThisHub.writeEndLog(uuid, reason).then(function() {
+        ThisHub.syncMeeting(uuid, reason);
+      });
+    }
+  }
+
   ThisHub.writeEndLog = function (uuid, reason) {
-    let endLog = {
+    console.log("writing endlog to", uuid);
+    let endLog = JSON.stringify({
       type: "meeting ended",
       log_timestamp: new Date() / 1000,
-      log_index: ++ThisHub.meetings["uuid"]["lastLogSerial"],
+      log_index: ++ThisHub.meetings[uuid]["lastLogSerial"],
       data: {
         reason: reason
       }
-    };
-    return OBSStorage.writeToFile(uuid + '.txt', endLog);
+    });
+    let fileName = uuid + '.txt';
+    // cordovaFile doesn't support appending??????????
+    // it replaces entire file on write
+    // so we have to get contents, add final line, and then write
+    return OBSStorage.readFile(fileName).then(function (fileContents) {
+      return OBSStorage.writeToFile(uuid + '.txt', fileContents + endLog + "\n");
+    });
   }
-  
-  ThisHub.syncMeeting = function(uuid) {
+
+  ThisHub.syncMeeting = function(uuid, reason) {
+    console.log("uploading mtg", uuid);
     OBSBackend.uploadEndedMeeting(uuid, reason).then(function(success) {
       console.log("Success", success);
     }, function(error) {
-      console.error(error);
+      console.log(error);
     });
   }
 
@@ -72,9 +99,24 @@ angular.module('ngOpenBadge.services')
       // with cordova but I can't be sure
       function loadMeetings (filesAsText) {
         //TODO make sure we have data
-        for (var rawData in filesAsText) {
+        for (let i = 0; i < filesAsText.length; i++) {
+          let rawData = filesAsText[i].trim();
+          if (rawData.length < 1) {
+            // our data is bad - this should always be true
+            // however, we can't reject because we want to continue processing
+            // the good files.
+            console.log("Encountered malformed data file - empty");
+            continue;
+          }
           let lines = rawData.split("\n");
           let firstLog = JSON.parse(lines[0]);
+          if (firstLog["type"] !== "meeting started") {
+            // our data is bad - this should always be true
+            // however, we can't reject because we want to continue processing
+            // the good files.
+            console.log("Encountered malformed data file - first line type other than meeting started");
+            continue;
+          }
           let meetingUUID = firstLog["data"]["uuid"];
           console.log("found meeting with uuid: " + meetingUUID);
           let lastLog = JSON.parse(lines[lines.length - 1]);
@@ -91,7 +133,7 @@ angular.module('ngOpenBadge.services')
           // that means the meeting wasn't properly ended by the user
           // likely either the app crashed or the user accidentally closed it
           // regardless, we should end the meeting & upload it to the server
-          if (meetingUUID !== OBSCurrentMeeting.uuid && !isMeetingEnded) {
+          if (meetingUUID !== ThisHub.activeMeeting && !isMeetingEnded) {
             ThisHub.endMeeting(meetingUUID, "sync");
           }
         }
@@ -99,13 +141,10 @@ angular.module('ngOpenBadge.services')
       }
 
       OBSStorage.listFiles().then(function (files) {
-        let promises = [];
-        for (file in files) {
-          promises.push(OBSStorage.readFile(file)); 
-        }
-
+        let promises = files.map(file => OBSStorage.readFile(file))
         $q.all(promises).then(loadMeetings).catch(reject);
-      }
+      });
+    });
   }
 
   return ThisHub;

@@ -7,7 +7,7 @@ We also interface with OBSStorage in order to fill requests when disconnected fr
 
 angular.module('ngOpenBadge.services')
 
-.factory('OBSBackend', function($http, $q, OBSThisHub, OBPrivate, OBSMyProject, OBSStorage, $cordovaFile, $timeout) {
+.factory('OBSBackend', function($http, $q, OBPrivate, OBSMyProject, OBSStorage, $cordovaFile, $timeout) {
   var BackendInterface = {};
   var baseURL = function() {
     return OBPrivate.BASE_URL;
@@ -83,13 +83,12 @@ angular.module('ngOpenBadge.services')
         if (LOGGING) {
           console.log("got hub data:", response);
         }
-        OBSThisHub.create(response.data);
         OBSMyProject.update(response.data.member_updates);
 
         OBSStorage.cacheHub(response.data);
         OBSStorage.cacheMemberUpdate(new Date() / 1000.0);
 
-        defer.resolve();
+        defer.resolve(response.data);
       },
       function error_projects(response) {
         if (LOGGING) {
@@ -102,10 +101,10 @@ angular.module('ngOpenBadge.services')
             console.log("attempting to fill hub data from cache", cachedHub);
           }
 
-          OBSThisHub.create(cachedHub);
+          defer.resolve(response.data);
+        } else {
+          defer.reject();
         }
-
-        defer.reject();
       }
     );
     return defer.promise;
@@ -194,7 +193,7 @@ angular.module('ngOpenBadge.services')
 
     var params = {
       is_complete: true,
-      ending_method: "manual"
+      ending_method: reason
     };
 
     return uploadFile(uuid, defer, params);

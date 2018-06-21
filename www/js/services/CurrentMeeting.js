@@ -16,7 +16,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
   CurrentMeeting.logIndex = 0;
 
   CurrentMeeting.lastUpdate = function() {
-    return OBSThisHub.meetings[CurrentMeeting.uuid].lastLogSerial
+    return OBSThisHub.meetings[CurrentMeeting.uuid].serverLogSerial
   };
 
   CurrentMeeting.writeLog = function() {
@@ -99,6 +99,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
     var now = Math.floor((new Date() / 1000.0));
     CurrentMeeting.uuid = OBPrivate.DEVICE_UUID + "_" + now.toString();
     CurrentMeeting.logIndex = 0;
+    OBSThisHub.activeMeeting = CurrentMeeting.uuid;
 
     CurrentMeeting.events = [
       {
@@ -113,6 +114,12 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
         }
       }
     ];
+
+    OBSThisHub.meetings[CurrentMeeting.uuid] = {
+      is_complete: false,
+      lastLogSerial: CurrentMeeting.events[0].log_index,
+      lastLogTimestamp: CurrentMeeting.events[0].log_timestamp
+    };
 
     var split = new Date().toString().split(" ");
     var timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
@@ -136,7 +143,10 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
       OBSBackend.initMeeting(CurrentMeeting.uuid);
     }).then(function() {
       CurrentMeeting.postInterval = $interval(function() {
-        CurrentMeeting.writeLog().then(OBSBackend.shortTermRefresh).then(CurrentMeeting.postEvents);
+        CurrentMeeting.writeLog()
+          .then(OBSBackend.shortTermRefresh)
+          .then(OBSThisHub.updateServerLogSerial)
+          .then(CurrentMeeting.postEvents);
       }, 10000);
     });
   };
@@ -172,6 +182,7 @@ angular.module('ngOpenBadge.services').factory('OBSCurrentMeeting', function(OBS
   // upload a final chunk telling the server that we're done. stop the uploads.
   CurrentMeeting.leave = function(reason) {
     $interval.cancel(CurrentMeeting.postInterval);
+    OBSThisHub.activeMeeting = null;
 
     for (var member in CurrentMeeting.badgesInMeeting) {
       _member = CurrentMeeting.badgesInMeeting[member];

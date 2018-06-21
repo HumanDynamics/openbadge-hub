@@ -7,7 +7,7 @@
 // 'starter.controllers' is found in controllers.js
 angular.module('ngOpenBadge', ['chart.js', 'ionic', 'ngCordova', 'ngOpenBadge.contollers', 'ngOpenBadge.services', 'ngOpenBadge.private'])
 
-.run(function($ionicPlatform, $cordovaDevice, OBSBluetooth, OBPrivate, $http) {
+.run(function($ionicPlatform, $cordovaDevice, OBSBackend, OBSBluetooth, OBSThisHub, OBPrivate, $http) {
 
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
@@ -26,6 +26,9 @@ angular.module('ngOpenBadge', ['chart.js', 'ionic', 'ngCordova', 'ngOpenBadge.co
     $http.defaults.headers.common['X-HUB-UUID'] = OBPrivate.DEVICE_UUID;
 
     OBSBluetooth.init().then();
+    OBSBackend.longTermRefresh()
+      .then(OBSBackend.shortTermRefresh)
+      .then(OBSThisHub.create);
 
     if (window.cordova && window.cordova.plugins) {
       if (window.cordova.plugins.Keyboard) {

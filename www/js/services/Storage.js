@@ -83,28 +83,18 @@ angular.module('ngOpenBadge.services')
     storage.setItem(toUploadKey, JSON.stringify(toUpload));
   };
 
-  // append the given contents to a file in Cordova External Data Directory
   StorageService.writeToFile = function(name, contents) {
+    // NOTE - this replaces file with provided contents, does not append
     return $cordovaFile.writeFile(cordova.file.externalDataDirectory, name, contents, true);
   }
 
   StorageService.readFile = function(name) {
     // returns a promise that resolves to the contents of the provided file
     return new Promise(function (outerResolve, outerReject) {
-      new Promise(function (resolve, reject) {
-        window.resolveLocalFileSystemURL(
-                cordova.file.externalDataDirectory + name,
-                resolve, 
-                reject);
-      }).then(function (file) {
-        let reader = new FileReader();
-
-        reader.onloadend = function (evt) {
-          outerResolve(evt.target.results);
-        }
-
-        reader.readAsText(file);
-      }).catch(outerReject);
+      $cordovaFile.readAsText(cordova.file.externalDataDirectory, name)
+        .then(function (fileContents) {
+          outerResolve(fileContents);
+        }).catch(outerReject);
     });
   }
 
@@ -113,7 +103,7 @@ angular.module('ngOpenBadge.services')
       new Promise(function (resolve, reject) {
         window.resolveLocalFileSystemURL(
                 cordova.file.externalDataDirectory,
-                resolve, 
+                resolve,
                 reject);
       }).then(function (dir) {
         let reader = dir.createReader();
@@ -121,10 +111,7 @@ angular.module('ngOpenBadge.services')
           reader.readEntries(resolve, reject);
         });
       }).then(function (entries) {
-        let fileList = [];
-        for (var entry in entries) {
-          fileList.push(entry.fullPath);
-        };
+        let fileList = entries.map(ele => ele.name);
         outerResolve(fileList);
       }).catch(outerReject);
     });
