@@ -7,6 +7,9 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
   var BluetoothFactory = {};
   var CRITICAL_LOGGING = true;
   var MODERATE_LOGGING = true;
+  // how long should we wait between not getting an update and giving up
+  // and restarting the connection
+  const LAST_SEEN_TIMEOUT = 30000 // milliseconds
 
   var nrf51UART = {
     serviceUUID: '6e400001-b5a3-f393-e0a9-e50e24dcca9e', // 0x000c?
@@ -240,6 +243,12 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
     });
     return deferredIsScannning.promise;
   };
+
+  BluetoothFactory.resetBadgeConnection = function (badge) {
+    return BluetoothFactory.endConnection(badge).then(function () {
+      return BluetoothFactory.connect(badge);
+    })
+  }
 
   // call this each time we connect and disconnect, to make sure we know whats going on
   //   with the badge. Calls a badge.onSubscription function with the subscription notif on
@@ -519,6 +528,7 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
 
   }
 
+
   // create badge's onSubscribe function, which parses subscription data
   BluetoothFactory.configureOnSubscribe = function(badge) {
 
@@ -543,7 +553,8 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
     };
 
     var onDataReceived = function(data) {
-
+      // we got data - take note of when we received it
+      badge.lastSeen = Date.now();
       var sampleArr = $struct.Unpack("<" + data.length + "B", data);
 
       if (badge.workingChunk) {
@@ -559,17 +570,28 @@ angular.module('ngOpenBadge.services').factory('OBSBluetooth', function($cordova
       }
     };
 
+    var requestDataFromBadge = function () {
+
+      var ts_seconds = Math.floor(badge.lastUpdate);
+      var ts_ms = badge.lastUpdate % 1;
+      var timeString = $struct.Pack('<cLH', ['r', ts_seconds, ts_ms]);
+      console.log("Requesting sample data since " +  badge.lastUpdate + " for " + badge.mac);
+      // ok. we have not gotten data in a while
+      // we should reset the connection
+      if (Date.now() - badge.lastSeen >= LAST_SEEN_TIMEOUT) {
+        console.log("Haven't seen data in a while, restarting connection for badge", badge.mac);
+        return BluetoothFactory.resetBadgeConnection();
+      } else {
+        return BluetoothFactory.sendString(badge, timeString);
+      }
+    };
+
     if (badge.dataCollectionInterval) {
       $interval.cancel(badge.dataCollectionInterval);
     }
 
-    badge.dataCollectionInterval = $interval(function() {
-      var ts_seconds = Math.floor(badge.lastUpdate);
-      var ts_ms = badge.lastUpdate % 1;
-      var timeString = $struct.Pack('<cLH', ['r', ts_seconds, ts_ms]);
-      console.log("Requesting sample data since", badge.lastUpdate);
-      return BluetoothFactory.sendString(badge, timeString);
-    }, 5000);
+    badge.lastSeen = Date.now();
+    badge.dataCollectionInterval = $interval(requestDataFromBadge, 5000);
 
     badge.onSubscription = function(notif) {
       if (notif && notif.status == "subscribedResult") {
