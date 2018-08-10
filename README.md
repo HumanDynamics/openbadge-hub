@@ -13,11 +13,12 @@ The following steps wokred in getting as working dev copy from a factory-fresh m
 - Download [Andriod Studio](https://developer.android.com/studio/index.html), and install it using the defualt settings.
 - Clone this repository, and cd into it
 - Run `npm install -g ionic@2.2.1`
-- Run `npm install -g cordova`
+- Run `npm install -g cordova@^6.0.0`
 - Run `npm install`
 - Run `ionic platform add android`
 - Run `cp www/js/private.js.template www/js/private.js`
 - Insert APP_KEY into appropriate field. 
+- On Ubuntu, you'll might need to install gradle: `sudo apt install gradle`
 - Run `ionic run android --device`
 
 
