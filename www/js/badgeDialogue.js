@@ -301,8 +301,11 @@ function BadgeDialogue(badge) {
         var sample_delay = header[3];
         var sample_count = header[4];
 
-        if (voltage > 1 && voltage < 4) {
-            //valid header?, voltage between 1 and 4
+        if (timestamp === 0) {
+            this.log("End of data received, disconnecting");
+            callback();
+            //badge.close();
+        } else if (voltage >= 0 && voltage < 4) {
             this.log("&nbsp Timestamp " + header[0] + "."+header[1]);
             this.log("&nbsp Voltage " + header[2]);
 
@@ -319,11 +322,6 @@ function BadgeDialogue(badge) {
             this.workingChunk.setHeader(timestamp, timestamp_ms, voltage, sample_delay, sample_count);
 
             this.expectingHeader = false;
-
-        } else if (timestamp_ms == 0) {
-            this.log("End of data received, disconnecting");
-            callback();
-            //badge.close();
         } else {
             this.log("invalid header");
         }
@@ -380,11 +378,14 @@ function BadgeDialogue(badge) {
     this.isHeader = function(data) {
         try {
             var header = struct.Unpack('<LHfHB',data);
-            if (header[2] > 1 && header[2] < 4 || header[1] == 0) {
+            var timestamp = header[0];
+            var voltage = header[2];
+            if ((voltage >= 0 && voltage < 4) || timestamp === 0) {
                 return true;
             }
         } catch (e) {
-
+            // TODO ?????
+            // what is the deal with this try/catch??
         }
         return false;
 
@@ -474,8 +475,11 @@ function BadgeDialogue(badge) {
             var voltage = header[1];
             var number_devices_seen = header[2];
 
-            if (voltage > 1 && voltage < 4) {
-                //valid header?, voltage between 1 and 4
+            if (timestamp === 0) {
+                this.log("End of data received, disconnecting");
+                badge.close();
+            } else if (voltage >= 0 && voltage < 4) {
+                //valid header?, voltage between 0 and 4
                 this.log("&nbsp Timestamp " + header[0]);
                 this.log("&nbsp Voltage " + header[1]);
 
@@ -492,10 +496,6 @@ function BadgeDialogue(badge) {
                 this.workingScanChunk.setHeader(timestamp, voltage, number_devices_seen);
 
                 this.expectingScanHeader = false;
-
-            } else if (timestamp == 0) {
-                this.log("End of data received, disconnecting");
-                badge.close();
             } else {
                 this.log("invalid header");
             }
