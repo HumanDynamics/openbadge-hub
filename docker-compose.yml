@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  openbadge-hub:
+    build:
+      context: .
+      dockerfile: ./compose/Dockerfile
+    volumes:
+      - .:/app
+      - /dev/bus/usb:/dev/bus/usb #required for serial port access
+    privileged: true
+    network_mode: "host" 
+    entrypoint: ["/app/compose/entry_point.sh"]
+    #command: ["badge_03v6_noDebug","flashAPP"]

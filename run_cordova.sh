@@ -6,9 +6,13 @@ cd www/js
 cp index.js noGitIndex.js
 echo window.gitRevision = \"$(git rev-parse --short HEAD)\"\; | cat - index.js > temp && mv temp index.js
 
+echo "Coffee and brew"
 coffee --compile mm.coffee
 browserify index.js -o bundle.js
 cd ../..
+
+
+echo "Cordova run"
 cordova run --device
 
 cd www/js

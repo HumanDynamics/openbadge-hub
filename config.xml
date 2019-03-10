@@ -32,7 +32,7 @@
     <icon density="hdpi" platform="android" src="icons/icon.png" />
     <icon density="xhdpi" platform="android" src="icons/icon.png" />
     <plugin name="cordova-plugin-bluetoothle" spec="~4.0.0" />
-    <plugin name="cordova-plugin-background-mode" spec="https://github.com/katzer/cordova-plugin-background-mode.git" />
+    <plugin name="cordova-plugin-background-mode" spec="https://github.com/katzer/cordova-plugin-background-mode.git#0.7.2" />
     <plugin name="cordova-plugin-insomnia" spec="https://github.com/EddyVerbruggen/Insomnia-PhoneGap-Plugin.git" />
     <plugin name="cordova-plugin-file" spec="~4.2.0" />
     <plugin name="cordova-plugin-file-transfer" spec="~1.5.1" />
