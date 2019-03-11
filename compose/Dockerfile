@@ -64,7 +64,3 @@ RUN npm i -g cordova@5
 RUN \
   apt-get install -y git && \
   apt-get install -y lib32ncurses5 lib32z1 lib32stdc++6
-
-#    74  dpkg --add-architecture i386
-#   75  apt-get update
-#   76  apt-get install -y libc6:i386 libstdc++6:i386 zlib1g:i386

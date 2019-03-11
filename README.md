@@ -20,3 +20,13 @@ Then to run the app, run the command
 
     $ ./run_cordova
 
+## Docker
+To use docker for building, install Docker and Docker-compose on your machine. The build the container:
+
+	$ docker-compose build
+
+And login into a shell within the docker:
+
+	$ docker-compose run --entrypoint /bin/bash openbadge-hub
+
+Then run the init and run_cordova commands from the previous section
